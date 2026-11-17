@@ -15,6 +15,7 @@
 #include <vdr/device.h>
 #include <vdr/i18n.h>
 #include <vdr/interface.h>
+#include <vdr/menu.h>
 #include <vdr/plugin.h>
 #include <vdr/remote.h>
 #include <vdr/skins.h>
@@ -294,6 +295,8 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 			return osContinue;
 		case eEntryAction::Channel:
 			return RunChannel(entry);
+		case eEntryAction::Output:
+			return RunOutput(entry);
 	}
 
 	return osContinue;
@@ -402,6 +405,29 @@ eOSState cActionMenu::RunChannel(const sMenuEntry &entry)
 
 	// not with the lock of the channels, the message waits
 	return Error(cString::sprintf(tr("Channel %s not found"), channel));
+}
+
+/**
+ * Run a shell command and show its output
+ *
+ * VDR waits for the end of the command, like with the commands of commands.conf.
+ *
+ * @param entry        the entry
+ *
+ * @return osContinue, the output is shown in a submenu
+ */
+eOSState cActionMenu::RunOutput(const sMenuEntry &entry)
+{
+	Skins.Message(mtStatus, cString::sprintf("%s...", entry.text.c_str()));
+	std::string output = ShellOutput(entry.command);
+	Skins.Message(mtStatus, nullptr);
+
+	if (output.empty()) {
+		Skins.Message(mtInfo, tr("The command printed nothing"));
+		return osContinue;
+	}
+
+	return AddSubMenu(new cMenuText(entry.text.c_str(), output.c_str(), fontFix));
 }
 
 /**

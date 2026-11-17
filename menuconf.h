@@ -26,6 +26,7 @@ enum class eEntryAction {
 	Keys,     ///< send keys to VDR
 	Shell,    ///< run a shell command in the background
 	Channel,  ///< switch to a channel
+	Output,   ///< run a shell command and show its output
 };
 
 /**

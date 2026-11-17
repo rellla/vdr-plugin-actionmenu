@@ -15,6 +15,7 @@
 #         key <key> [<key> ...]                  send keys to VDR
 #         shell <command>                        run a command in the background
 #         channel <number | channel ID>          switch to a channel
+#         output <command>                       run a command and show its output
 #         svdrp! and shell! keep the menu open.
 
 Red     "Output"            {
@@ -35,4 +36,5 @@ Blue    "Picture in picture" {
 2       "EPG search"        plugin epgsearch
 3       "Timers"            key Timers
 4       "Zoom"              svdrp drmdevice ZOOM next
+5       "Free space"        output df -h /storage 2>&1
 -       "Restart VDR"?      shell systemctl restart vdr

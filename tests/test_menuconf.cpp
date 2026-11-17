@@ -35,10 +35,11 @@ TEST_CASE("actionmenu.conf - actions", "[menuconf]") {
 		"-   \"Schedule\"       key Schedule Down\n"
 		"Blue \"Script\"        shell! /usr/bin/script.sh --arg \"x y\"\n"
 		"5   \"Das Erste\"      channel 1\n"
-		"6   \"ZDF\"            channel S19.2E-1-1079-28006\n"));
+		"6   \"ZDF\"            channel S19.2E-1-1079-28006\n"
+		"7   \"Temperature\"    output vcgencmd measure_temp 2>&1\n"));
 
 	const auto &e = config.Entries();
-	REQUIRE(e.size() == 7);
+	REQUIRE(e.size() == 8);
 
 	REQUIRE(e[0].key == "1");
 	REQUIRE(e[0].text == "PiP on/off");
@@ -67,6 +68,9 @@ TEST_CASE("actionmenu.conf - actions", "[menuconf]") {
 	REQUIRE(e[5].action == eEntryAction::Channel);
 	REQUIRE(e[5].command == "1");
 	REQUIRE(e[6].command == "S19.2E-1-1079-28006");
+
+	REQUIRE(e[7].action == eEntryAction::Output);
+	REQUIRE(e[7].command == "vcgencmd measure_temp 2>&1");
 }
 
 TEST_CASE("actionmenu.conf - states", "[menuconf]") {
@@ -167,8 +171,8 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A\" [] svdrp x y\n",                    "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [svdrp drmdevice PASS]\n",          "line 1: the action is missing" },
 		{ "1 \"A\"? {\n}\n",                     "line 1: a submenu doesn't ask before it is opened" },
-		{ "1 \"A\" ? key Ok\n",                  "line 1: unknown action '?' (svdrp, plugin, key, shell, channel or {)" },
-		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel or {)" },
+		{ "1 \"A\" ? key Ok\n",                  "line 1: unknown action '?' (svdrp, plugin, key, shell, channel, output or {)" },
+		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel, output or {)" },
 		{ "1 \"A\" svdrp drmdevice\n",          "line 1: svdrp needs a plugin and a command" },
 		{ "1 \"A\" plugin\n",                   "line 1: plugin needs the name of a plugin" },
 		{ "1 \"A\" plugin a b\n",               "line 1: plugin needs the name of a plugin" },
@@ -177,6 +181,8 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A\" channel\n",                  "line 1: channel needs the number or the ID of a channel" },
 		{ "1 \"A\" channel 1 2\n",              "line 1: channel needs the number or the ID of a channel" },
 		{ "1 \"A\" channel! 1\n",               "line 1: channel! isn't possible, only svdrp! and shell! keep the menu open" },
+		{ "1 \"A\" output\n",                   "line 1: output needs a command" },
+		{ "1 \"A\" output! df\n",               "line 1: output! isn't possible, only svdrp! and shell! keep the menu open" },
 		{ "1 \"A\" key! Ok\n",                  "line 1: key! isn't possible, only svdrp! and shell! keep the menu open" },
 		{ "1 \"A\" plugin! epgsearch\n",        "line 1: plugin! isn't possible, only svdrp! and shell! keep the menu open" },
 		{ "\n1 \"A\" key Ok\n1 \"B\" key Ok\n", "line 3: the key 1 is already used in this menu" },

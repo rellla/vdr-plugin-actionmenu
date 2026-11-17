@@ -44,3 +44,6 @@ msgstr "Das Plugin %s kann gerade nicht geöffnet werden"
 #, c-format
 msgid "Channel %s not found"
 msgstr "Kanal %s nicht gefunden"
+
+msgid "The command printed nothing"
+msgstr "Der Befehl hat nichts ausgegeben"

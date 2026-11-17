@@ -22,6 +22,7 @@
  *     key <key> [<key> ...]
  *     shell <command>
  *     channel <number or channel ID>
+ *     output <command>
  *
  * "svdrp!" and "shell!" keep the menu open. Empty lines and lines starting with
  * '#' are ignored.
@@ -268,10 +269,15 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		entry.command = rest;
 		if (entry.command.empty() || entry.command.find_first_of(WHITESPACE) != std::string::npos)
 			return Fail(line, "channel needs the number or the ID of a channel");
+	} else if (!strcasecmp(word.c_str(), "output")) {
+		entry.action = eEntryAction::Output;
+		entry.command = rest;
+		if (entry.command.empty())
+			return Fail(line, "output needs a command");
 	} else if (word.empty()) {
 		return Fail(line, "the action is missing");
 	} else {
-		return Fail(line, "unknown action '" + word + "' (svdrp, plugin, key, shell, channel or {)");
+		return Fail(line, "unknown action '" + word + "' (svdrp, plugin, key, shell, channel, output or {)");
 	}
 
 	// the other actions close the menu to let VDR or the plugin handle it

@@ -97,6 +97,10 @@ action
 		Switch to a channel, e.g. "channel 1" or "channel S19.2E-1-1019-10301" (the ID
 		stays valid, if the channels are sorted differently). With the color keys,
 		these are favorite channels.
+	output <command>
+		Run a command and show its output (stdout, add "2>&1" for the errors) on a page
+		with a fixed font, Back goes back to the menu. VDR waits for the end of the
+		command, like with the commands of commands.conf.
 	svdrp! and shell!
 		The same, but the menu stays open.
 

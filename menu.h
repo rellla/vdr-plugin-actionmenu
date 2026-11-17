@@ -46,6 +46,7 @@ private:
 	eOSState RunKeys(const sMenuEntry &);
 	eOSState RunPlugin(const sMenuEntry &);
 	eOSState RunChannel(const sMenuEntry &);
+	eOSState RunOutput(const sMenuEntry &);
 	eOSState Error(const char *);
 };
 
