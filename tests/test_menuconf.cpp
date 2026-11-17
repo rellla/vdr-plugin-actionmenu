@@ -82,7 +82,9 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 		"2 \"Output\" [svdrp drmdevice STAT] {\n"
 		"}\n"
 		"3 \"Zoom\" svdrp drmdevice ZOOM next\n"
-		"4 \"Temperature\" [shell vcgencmd measure_temp | cut -d= -f2] shell! true\n"));
+		"4 \"Temperature\" [shell vcgencmd measure_temp | cut -d= -f2] shell! true\n"
+		"5 \"File\" [shell [ -f /tmp/x ] && echo yes] shell rm /tmp/x\n"
+		"6 \"Number\" [shell sed 's/[^0-9]//g' /tmp/x] [refresh] shell true\n"));
 
 	const auto &e = config.Entries();
 	REQUIRE(e[0].stateAction == eEntryAction::Svdrp);
@@ -101,6 +103,12 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 	REQUIRE(e[4].statePlugin.empty());
 	REQUIRE(e[4].stateCommand == "vcgencmd measure_temp | cut -d= -f2");
 	REQUIRE(e[4].command == "true");
+	// brackets in a state are counted
+	REQUIRE(e[5].stateCommand == "[ -f /tmp/x ] && echo yes");
+	REQUIRE(e[5].command == "rm /tmp/x");
+	REQUIRE(e[6].stateCommand == "sed 's/[^0-9]//g' /tmp/x");
+	REQUIRE(e[6].refreshSeconds == 2);
+	REQUIRE(e[6].command == "true");
 }
 
 TEST_CASE("actionmenu.conf - chains", "[menuconf]") {
@@ -337,6 +345,7 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"\" key Ok\n",                    "line 1: the text is empty" },
 		{ "1 \"A\"\n",                          "line 1: the action is missing" },
 		{ "1 \"A\" [svdrp drmdevice PASS svdrp x y\n", "line 1: the closing ']' of the state is missing" },
+		{ "1 \"A\" [shell [ -f x ] svdrp x y\n",     "line 1: the closing ']' of the state is missing" },
 		{ "1 \"A\" [svdrp drmdevice] svdrp x y\n",     "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [drmdevice PASS] svdrp x y\n",      "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [shell] svdrp x y\n",               "line 1: the state needs svdrp <plugin> <command> or shell <command>" },

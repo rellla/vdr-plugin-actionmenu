@@ -125,7 +125,9 @@ A command in brackets shows its reply or output as state of the entry:
 - The states are read, when the menu is opened, after an action, which keeps the menu open, and
   after a submenu is closed.
 - The command must only read the state, it is run every time. VDR waits for a shell command, so it
-  must be quick. The command can't contain `]`.
+  must be quick.
+- Brackets in the command must be pairs, e.g. `[shell [ -f /tmp/x ] && echo yes || echo no]` or
+  `[shell sed 's/[^0-9]//' /tmp/x]`.
 - If the state can't be read (an error or no output), `?` is shown.
 
 `[refresh]` or `[refresh <seconds>]` after the state reads it again periodically, while the menu

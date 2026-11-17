@@ -116,6 +116,29 @@ bool KeyName(const std::string &word, std::string &key)
 	return false;
 }
 
+/**
+ * Find the ']', which closes the '[' at the beginning of a text
+ *
+ * The brackets in between are counted, so a command may contain pairs of them
+ * (e.g. "[ -f file ]" or "sed 's/[^0-9]//'").
+ *
+ * @param s            the text, which starts with '['
+ *
+ * @return position of the ']' or std::string::npos
+ */
+size_t ClosingBracket(const std::string &s)
+{
+	int depth = 0;
+	for (size_t i = 0; i < s.size(); i++) {
+		if (s[i] == '[')
+			depth++;
+		else if (s[i] == ']' && --depth == 0)
+			return i;
+	}
+
+	return std::string::npos;
+}
+
 } // namespace
 
 /**
@@ -288,7 +311,7 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		return Fail(line, "refresh needs a state before it");
 
 	if (!action.empty() && action[0] == '[') {
-		size_t close = action.find(']');
+		size_t close = ClosingBracket(action);
 		if (close == std::string::npos)
 			return Fail(line, "the closing ']' of the state is missing");
 		std::string command;
