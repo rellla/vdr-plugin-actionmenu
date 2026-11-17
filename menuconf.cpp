@@ -27,6 +27,10 @@
  *     channel <number or channel ID>
  *     output <command>
  *
+ * The lines [live], [replay] and [all] start a section of the menu, whose
+ * entries are only shown without replay, during a replay or always (the
+ * default). A section ends with the next one or the end of the (sub)menu.
+ *
  * "svdrp!" and "shell!" keep the menu open. The commands may contain the
  * placeholders %channel%, %channelid% and %recording% (see ExpandPlaceholders()). Empty lines and lines starting with
  * '#' are ignored.
@@ -137,8 +141,13 @@ bool cMenuConfig::Parse(std::istream &in)
 	m_entries.clear();
 	m_error.clear();
 
-	// the menus, which are open at the current line, with the line of their start
-	std::vector<std::pair<std::vector<sMenuEntry> *, int>> menus = { { &m_entries, 0 } };
+	// the menus, which are open at the current line
+	struct sOpenMenu {
+		std::vector<sMenuEntry> *entries;   ///< entries of the menu
+		int line;                           ///< line of the start of the menu
+		eMenuSection section;               ///< the current section of the menu
+	};
+	std::vector<sOpenMenu> menus = { { &m_entries, 0, eMenuSection::All } };
 
 	std::string text;
 	for (int line = 1; std::getline(in, text); line++) {
@@ -153,14 +162,30 @@ bool cMenuConfig::Parse(std::istream &in)
 			continue;
 		}
 
+		if (text[0] == '[') {
+			if (!strcasecmp(text.c_str(), "[all]"))
+				menus.back().section = eMenuSection::All;
+			else if (!strcasecmp(text.c_str(), "[live]"))
+				menus.back().section = eMenuSection::Live;
+			else if (!strcasecmp(text.c_str(), "[replay]"))
+				menus.back().section = eMenuSection::Replay;
+			else
+				return Fail(line, "unknown section " + text + " ([all], [live] or [replay])");
+			continue;
+		}
+
 		sMenuEntry entry;
 		if (!ParseEntry(text, line, entry))
 			return false;
+		entry.section = menus.back().section;
 
-		std::vector<sMenuEntry> &menu = *menus.back().first;
+		std::vector<sMenuEntry> &menu = *menus.back().entries;
 		if (!entry.key.empty()) {
 			for (const sMenuEntry &other : menu) {
-				if (other.key == entry.key)
+				// a key can be used once without replay and once during a replay
+				bool shownTogether = other.section == eMenuSection::All || entry.section == eMenuSection::All
+				                     || other.section == entry.section;
+				if (other.key == entry.key && shownTogether)
 					return Fail(line, "the key " + entry.key + " is already used in this menu");
 			}
 		}
@@ -168,11 +193,11 @@ bool cMenuConfig::Parse(std::istream &in)
 		menu.push_back(entry);
 		// the entries of the menu don't change, until its submenu is closed
 		if (entry.action == eEntryAction::Menu)
-			menus.push_back({ &menu.back().entries, line });
+			menus.push_back({ &menu.back().entries, line, eMenuSection::All });
 	}
 
 	if (menus.size() > 1)
-		return Fail(menus.back().second, "the submenu isn't closed with '}'");
+		return Fail(menus.back().line, "the submenu isn't closed with '}'");
 
 	return true;
 }

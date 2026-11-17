@@ -32,12 +32,22 @@ enum class eEntryAction {
 };
 
 /**
+ * When an entry is shown
+ */
+enum class eMenuSection {
+	All,      ///< always
+	Live,     ///< only without replay
+	Replay,   ///< only during a replay (recordings and other players)
+};
+
+/**
  * Entry of a menu
  */
 struct sMenuEntry {
 	std::string key;                                   ///< 0 - 9, Red, Green, Yellow, Blue or empty (only selectable in the list)
 	std::string text;                                  ///< text in the menu
 	eEntryAction action = eEntryAction::Menu;          ///< what the entry does
+	eMenuSection section = eMenuSection::All;          ///< when the entry is shown
 	bool keepOpen = false;                             ///< the menu stays open after the action
 	bool confirm = false;                              ///< ask before the action
 	std::string plugin;                                ///< plugin of the SVDRP command or the plugin to open

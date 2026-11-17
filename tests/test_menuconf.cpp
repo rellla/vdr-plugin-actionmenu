@@ -103,6 +103,47 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 	REQUIRE(e[4].command == "true");
 }
 
+TEST_CASE("actionmenu.conf - sections", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"1 \"Always\" key Ok\n"
+		"[live]\n"
+		"Red \"Das Erste\" channel 1\n"
+		"2 \"Submenu\" {\n"
+		"    3 \"Always in the submenu\" key Ok\n"
+		"    [Replay]\n"
+		"    4 \"Replay in the submenu\" key Ok\n"
+		"}\n"
+		"[replay]\n"
+		"Red \"Cut\" key Ok\n"
+		"[ALL]\n"
+		"5 \"Always again\" key Ok\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e.size() == 5);
+	REQUIRE(e[0].section == eMenuSection::All);
+	REQUIRE(e[1].section == eMenuSection::Live);
+	REQUIRE(e[2].section == eMenuSection::Live);
+	REQUIRE(e[2].entries[0].section == eMenuSection::All);
+	REQUIRE(e[2].entries[1].section == eMenuSection::Replay);
+	REQUIRE(e[3].section == eMenuSection::Replay);
+	REQUIRE(e[3].key == "Red");
+	REQUIRE(e[4].section == eMenuSection::All);
+
+	const std::pair<const char *, const char *> errors[] = {
+		{ "[radio]\n",                                          "line 1: unknown section [radio] ([all], [live] or [replay])" },
+		{ "Red \"A\" key Ok\n[live]\nRed \"B\" key Ok\n",       "line 3: the key Red is already used in this menu" },
+		{ "[replay]\nRed \"A\" key Ok\n[all]\nRed \"B\" key Ok\n", "line 4: the key Red is already used in this menu" },
+		{ "[live]\n1 \"A\" key Ok\n1 \"B\" key Ok\n",             "line 3: the key 1 is already used in this menu" },
+	};
+	for (const auto &[text, error] : errors) {
+		INFO(text);
+		REQUIRE_FALSE(Parse(config, text));
+		REQUIRE(config.Error() == error);
+	}
+}
+
 TEST_CASE("actionmenu.conf - refresh", "[menuconf]") {
 	cMenuConfig config;
 

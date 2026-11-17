@@ -34,7 +34,7 @@ public:
 	virtual eOSState ProcessKey(eKeys);
 
 private:
-	std::vector<sMenuEntry> m_entries;               ///< the entries (copied, the menu outlives the configuration)
+	std::vector<sMenuEntry> m_entries;               ///< the shown entries (copied, the menu outlives the configuration)
 	const sMenuEntry *m_colorEntries[4] = {};        ///< entries of the color buttons (red, green, yellow, blue)
 	std::string m_helpTexts[4];                      ///< texts of the color buttons (SetHelp() keeps the pointers)
 	bool m_hasStates = false;                        ///< true, if an entry shows its state

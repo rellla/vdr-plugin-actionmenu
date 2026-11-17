@@ -21,14 +21,20 @@
 #         output <command>                       run a command and show its output
 #         svdrp! and shell! keep the menu open.
 # placeholders in commands: %channel%, %channelid%, %recording%
+# sections:  [live], [replay] and [all] (default) show the following entries only
+#            without replay, during a replay or always
 
 Red     "Output"            {
     1   "Detach"?           svdrp drmdevice DETA
     2   "Attach"            svdrp drmdevice ATTA
     3   "Passthrough"       [svdrp drmdevice PASS] svdrp! drmdevice PASS toggle
 }
+[live]
 Green   "Das Erste"         channel S19.2E-1-1019-10301
 Yellow  "ZDF"               channel S19.2E-1-1079-28006
+[replay]
+Green   "Recording info"    output ls -l "%recording%"
+[all]
 Blue    "Picture in picture" {
     1   "On/off"            svdrp drmdevice PITO
     6   "Current channel"   svdrp drmdevice PION %channel%

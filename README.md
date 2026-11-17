@@ -129,6 +129,20 @@ action
 	svdrp! and shell!
 		The same, but the menu stays open.
 
+The lines [live], [replay] and [all] start a section of a menu. Its entries are only shown
+without replay, during a replay (recordings and other players, e.g. the mediaplayer) or always.
+Without a section, the entries are always shown. A section ends with the next one or the end of
+the (sub)menu, the entries of a submenu are always shown, until it has its own sections. A key
+can be used once in [live] and once in [replay]:
+
+	1   "Ambient light"   svdrp hyperion AMBI toggle
+	[live]
+	Red "Das Erste"       channel S19.2E-1-1019-10301
+	[replay]
+	Red "Info"            key Info
+
+The section is checked, when the menu is opened.
+
 The commands of svdrp, shell and output and of the states may contain placeholders, which are
 replaced, when the command is run:
 

@@ -172,6 +172,27 @@ std::string EntryText(const sMenuEntry &entry)
 }
 
 /**
+ * Get the entries, which are shown now
+ *
+ * @param entries      all entries of the menu
+ *
+ * @return the entries of the current section (without replay or during a replay)
+ */
+std::vector<sMenuEntry> CurrentEntries(const std::vector<sMenuEntry> &entries)
+{
+	cDevice *device = cDevice::PrimaryDevice();
+	eMenuSection current = device->Replaying() && !device->Transferring() ? eMenuSection::Replay : eMenuSection::Live;
+
+	std::vector<sMenuEntry> result;
+	for (const sMenuEntry &entry : entries) {
+		if (entry.section == eMenuSection::All || entry.section == current)
+			result.push_back(entry);
+	}
+
+	return result;
+}
+
+/**
  * Entry in the list of the menu
  */
 class cActionItem : public cOsdItem {
@@ -212,11 +233,11 @@ private:
  * Create the menu
  *
  * @param title        title of the menu
- * @param entries      the entries
+ * @param entries      the entries, the menu shows the ones of the current section
  */
 cActionMenu::cActionMenu(const char *title, const std::vector<sMenuEntry> &entries)
 	: cOsdMenu(title, 3),
-	  m_entries(entries)
+	  m_entries(CurrentEntries(entries))
 {
 	for (const sMenuEntry &entry : m_entries) {
 		int color = ColorIndex(entry.key);
