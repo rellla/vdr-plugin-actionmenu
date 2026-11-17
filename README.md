@@ -44,8 +44,8 @@ error is shown with its line, when the menu is opened.
 
 Every line is an entry or the end of a submenu:
 
-	<key> "<text>" <action>
-	<key> "<text>" {
+	<key> "<text>" [<state>] <action>
+	<key> "<text>" [<state>] {
 	    <entries of the submenu>
 	}
 
@@ -56,6 +56,26 @@ key
 text
 	the text of the entry in the menu or on the color button (keep it short there, the skins
 	cut long texts off)
+
+state (optional)
+	A command in brackets, whose reply or output is shown as state of the entry:
+
+	[svdrp <plugin> <command>]
+		an SVDRP command of a plugin, e.g. "Passthrough: on" for
+
+			1 "Passthrough" [svdrp drmdevice PASS] svdrp! drmdevice PASS toggle
+
+	[shell <command>]
+		a shell command, e.g. "Temperature: 45.0'C" for
+
+			- "Temperature" [shell vcgencmd measure_temp | cut -d= -f2] shell! true
+
+	The state is the part of the first line of the reply or the output after the last ": "
+	(the reply "Passthrough: on" shows "on"), otherwise the whole line. The states are read,
+	when the menu is opened, after an action, which keeps the menu open, and after a submenu
+	is closed. The command must only read the state, it is run every time. VDR waits for a
+	shell command, so it must be quick. The command can't contain "]". If the state can't be
+	read (an error or no output), "?" is shown.
 
 action
 	svdrp <plugin> <command> [<options>]

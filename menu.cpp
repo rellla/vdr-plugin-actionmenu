@@ -38,17 +38,120 @@ int ColorIndex(const std::string &key)
 }
 
 /**
+ * Result of an SVDRP command
+ */
+enum class eSvdrpResult {
+	Ok,
+	NoPlugin,         ///< the plugin isn't loaded
+	UnknownCommand,   ///< the plugin doesn't know the command
+	Error,            ///< the plugin replied with an error (code 500 or higher)
+};
+
+/**
+ * Run an SVDRP command of a plugin
+ *
+ * @param pluginName       the plugin
+ * @param commandLine      the command with its options
+ * @param[out] reply       the first line of the reply
+ *
+ * @return the result
+ */
+eSvdrpResult Svdrp(const std::string &pluginName, const std::string &commandLine, std::string &reply)
+{
+	cPlugin *plugin = cPluginManager::GetPlugin(pluginName.c_str());
+	if (!plugin)
+		return eSvdrpResult::NoPlugin;
+
+	std::string option;
+	size_t end = commandLine.find_first_of(" \t");
+	std::string command = commandLine.substr(0, end);
+	if (end != std::string::npos)
+		option = commandLine.substr(commandLine.find_first_not_of(" \t", end));
+
+	int replyCode = 900;
+	cString text = plugin->SVDRPCommand(command.c_str(), option.empty() ? nullptr : option.c_str(), replyCode);
+	if (!*text)
+		return eSvdrpResult::UnknownCommand;
+
+	reply = *text;
+	reply = reply.substr(0, reply.find('\n'));
+
+	return replyCode >= 500 ? eSvdrpResult::Error : eSvdrpResult::Ok;
+}
+
+/**
+ * Run a shell command and wait for its end
+ *
+ * @param command      the command
+ *
+ * @return the output of the command (stdout)
+ */
+std::string ShellOutput(const std::string &command)
+{
+	std::string output;
+	cPipe pipe;
+	if (!pipe.Open(command.c_str(), "r")) {
+		esyslog("actionmenu: can't run %s", command.c_str());
+		return output;
+	}
+
+	char buffer[1024];
+	size_t length;
+	while ((length = fread(buffer, 1, sizeof(buffer), pipe)) > 0)
+		output.append(buffer, length);
+	pipe.Close();
+
+	return output;
+}
+
+/**
+ * Get the text of an entry with its state
+ *
+ * The state is the part of the first line of the reply or the output after the
+ * last ": " (e.g. "on" of the reply "Passthrough: on"), otherwise the whole line.
+ *
+ * @param entry        the entry
+ *
+ * @return e.g. "Passthrough: on", the text without state or "text: ?", if the
+ *         state can't be read
+ */
+std::string EntryText(const sMenuEntry &entry)
+{
+	if (entry.stateCommand.empty())
+		return entry.text;
+
+	std::string reply;
+	bool ok;
+	if (entry.stateAction == eEntryAction::Shell) {
+		reply = ShellOutput(entry.stateCommand);
+		reply = reply.substr(0, reply.find('\n'));
+		ok = !reply.empty();
+	} else
+		ok = Svdrp(entry.statePlugin, entry.stateCommand, reply) == eSvdrpResult::Ok;
+
+	if (!ok) {
+		dsyslog("actionmenu: can't read the state of %s: %s", entry.text.c_str(), reply.c_str());
+		return entry.text + ": ?";
+	}
+
+	size_t colon = reply.rfind(": ");
+	return entry.text + ": " + (colon == std::string::npos ? reply : reply.substr(colon + 2));
+}
+
+/**
  * Entry in the list of the menu
  */
 class cActionItem : public cOsdItem {
 public:
-	/** create the item of the entry */
-	explicit cActionItem(const sMenuEntry &entry)
-		: cOsdItem(cString::sprintf("%s\t%s%s", entry.key.c_str(), entry.text.c_str(),
-		           entry.action == eEntryAction::Menu ? " ..." : "")),
-		  m_entry(entry)
-	{}
-	const sMenuEntry &Entry(void) const { return m_entry; }  ///< the entry of the item
+	explicit cActionItem(const sMenuEntry &entry) : m_entry(entry) { Update(); }  ///< create the item of the entry
+	const sMenuEntry &Entry(void) const { return m_entry; }                       ///< the entry of the item
+
+	/** read the state of the entry again */
+	void Update(void)
+	{
+		SetText(cString::sprintf("%s\t%s%s", m_entry.key.c_str(), EntryText(m_entry).c_str(),
+		        m_entry.action == eEntryAction::Menu ? " ..." : ""));
+	}
 
 private:
 	const sMenuEntry &m_entry;  ///< the entry of the item
@@ -72,12 +175,39 @@ cActionMenu::cActionMenu(const char *title, const std::vector<sMenuEntry> &entri
 			m_colorEntries[color] = &entry;
 		else
 			Add(new cActionItem(entry));
+		m_hasStates |= !entry.stateCommand.empty();
 	}
 
+	SetHelpTexts();
+}
+
+/**
+ * Set the texts of the color buttons with the states of their entries
+ */
+void cActionMenu::SetHelpTexts(void)
+{
 	const char *help[4] = {};
-	for (int i = 0; i < 4; i++)
-		help[i] = m_colorEntries[i] ? m_colorEntries[i]->text.c_str() : nullptr;
+	for (int i = 0; i < 4; i++) {
+		if (m_colorEntries[i]) {
+			m_helpTexts[i] = EntryText(*m_colorEntries[i]);
+			help[i] = m_helpTexts[i].c_str();
+		}
+	}
 	SetHelp(help[0], help[1], help[2], help[3]);
+}
+
+/**
+ * Read the states of the entries again and show them
+ */
+void cActionMenu::UpdateStates(void)
+{
+	if (!m_hasStates)
+		return;
+
+	for (cOsdItem *item = First(); item; item = Next(item))
+		static_cast<cActionItem *>(item)->Update();
+	SetHelpTexts();
+	Display();
 }
 
 /**
@@ -91,7 +221,13 @@ eOSState cActionMenu::ProcessKey(eKeys key)
 {
 	bool hadSubMenu = HasSubMenu();
 	eOSState state = cOsdMenu::ProcessKey(key);
-	if (hadSubMenu || state != osUnknown)
+	if (hadSubMenu) {
+		// the actions of the submenu may have changed the states
+		if (!HasSubMenu())
+			UpdateStates();
+		return state;
+	}
+	if (state != osUnknown)
 		return state;
 
 	if (key == kOk) {
@@ -148,7 +284,10 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 			return RunKeys(entry);
 		case eEntryAction::Shell:
 			SystemExec(entry.command.c_str(), true);
-			return entry.keepOpen ? osContinue : osEnd;
+			if (!entry.keepOpen)
+				return osEnd;
+			UpdateStates();
+			return osContinue;
 		case eEntryAction::Channel:
 			return RunChannel(entry);
 	}
@@ -168,29 +307,20 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
  */
 eOSState cActionMenu::RunSvdrp(const sMenuEntry &entry)
 {
-	cPlugin *plugin = cPluginManager::GetPlugin(entry.plugin.c_str());
-	if (!plugin)
-		return Error(cString::sprintf(tr("The plugin %s isn't loaded"), entry.plugin.c_str()));
-
-	std::string option;
-	size_t end = entry.command.find_first_of(" \t");
-	std::string command = entry.command.substr(0, end);
-	if (end != std::string::npos)
-		option = entry.command.substr(entry.command.find_first_not_of(" \t", end));
-
-	int replyCode = 900;
-	cString reply = plugin->SVDRPCommand(command.c_str(), option.empty() ? nullptr : option.c_str(), replyCode);
-	if (!*reply)
-		return Error(cString::sprintf(tr("The plugin %s doesn't know the command %s"), entry.plugin.c_str(), command.c_str()));
-
-	// show only the first line of the reply
-	std::string text = *reply;
-	text = text.substr(0, text.find('\n'));
-
-	if (replyCode >= 500)
-		return Error(text.c_str());
+	std::string text;
+	switch (Svdrp(entry.plugin, entry.command, text)) {
+		case eSvdrpResult::NoPlugin:
+			return Error(cString::sprintf(tr("The plugin %s isn't loaded"), entry.plugin.c_str()));
+		case eSvdrpResult::UnknownCommand:
+			return Error(cString::sprintf(tr("The plugin %s doesn't know the command %s"), entry.plugin.c_str(), entry.command.c_str()));
+		case eSvdrpResult::Error:
+			return Error(text.c_str());
+		case eSvdrpResult::Ok:
+			break;
+	}
 
 	if (entry.keepOpen) {
+		UpdateStates();
 		SetStatus(text.c_str());
 		return osContinue;
 	}

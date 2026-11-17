@@ -12,6 +12,7 @@
 #ifndef __ACTIONMENU_MENU_H
 #define __ACTIONMENU_MENU_H
 
+#include <string>
 #include <vector>
 
 #include <vdr/osdbase.h>
@@ -34,7 +35,11 @@ public:
 private:
 	std::vector<sMenuEntry> m_entries;                  ///< the entries (copied, the menu outlives the configuration)
 	const sMenuEntry *m_colorEntries[4] = {};           ///< entries of the color buttons (red, green, yellow, blue)
+	std::string m_helpTexts[4];                         ///< texts of the color buttons (SetHelp() keeps the pointers)
+	bool m_hasStates = false;                           ///< true, if an entry shows its state
 
+	void SetHelpTexts(void);
+	void UpdateStates(void);
 	const sMenuEntry *Find(eKeys) const;
 	eOSState Run(const sMenuEntry &);
 	eOSState RunSvdrp(const sMenuEntry &);

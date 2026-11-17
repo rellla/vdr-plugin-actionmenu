@@ -6,11 +6,13 @@
  *
  * Every line is an entry of the menu or the end of a submenu:
  *
- *     <key> "<text>" <action>
- *     <key> "<text>" {
+ *     <key> "<text>" [<state>] <action>
+ *     <key> "<text>" [<state>] {
  *         <entries of the submenu>
  *     }
  *
+ * The optional state in brackets is "[svdrp <plugin> <command>]" or
+ * "[shell <command>]", the reply or the output is shown as state of the entry.
  * The key is 0 - 9, Red, Green, Yellow, Blue or "-" (no key, only selectable in
  * the list). The action is one of
  *
@@ -209,6 +211,24 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		return Fail(line, "the text is empty");
 
 	std::string action = Trim(rest.substr(end + 1));
+	if (!action.empty() && action[0] == '[') {
+		size_t close = action.find(']');
+		if (close == std::string::npos)
+			return Fail(line, "the closing ']' of the state is missing");
+		std::string command;
+		word = FirstWord(Trim(action.substr(1, close - 1)), command);
+		if (!strcasecmp(word.c_str(), "svdrp")) {
+			entry.stateAction = eEntryAction::Svdrp;
+			entry.statePlugin = FirstWord(command, entry.stateCommand);
+		} else if (!strcasecmp(word.c_str(), "shell")) {
+			entry.stateAction = eEntryAction::Shell;
+			entry.stateCommand = command;
+		}
+		if (entry.stateCommand.empty())
+			return Fail(line, "the state needs svdrp <plugin> <command> or shell <command>");
+		action = Trim(action.substr(close + 1));
+	}
+
 	if (action == "{") {
 		entry.action = eEntryAction::Menu;
 		return true;

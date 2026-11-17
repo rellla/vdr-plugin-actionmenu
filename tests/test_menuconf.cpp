@@ -69,6 +69,36 @@ TEST_CASE("actionmenu.conf - actions", "[menuconf]") {
 	REQUIRE(e[6].command == "S19.2E-1-1079-28006");
 }
 
+TEST_CASE("actionmenu.conf - states", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"1 \"Passthrough\" [svdrp drmdevice PASS] svdrp! drmdevice PASS toggle\n"
+		"Red \"Ambient light\"[ SVDRP hyperion  AMBI ]svdrp hyperion AMBI toggle\n"
+		"2 \"Output\" [svdrp drmdevice STAT] {\n"
+		"}\n"
+		"3 \"Zoom\" svdrp drmdevice ZOOM next\n"
+		"4 \"Temperature\" [shell vcgencmd measure_temp | cut -d= -f2] shell! true\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e[0].stateAction == eEntryAction::Svdrp);
+	REQUIRE(e[0].statePlugin == "drmdevice");
+	REQUIRE(e[0].stateCommand == "PASS");
+	REQUIRE(e[0].command == "PASS toggle");
+	REQUIRE(e[0].keepOpen);
+	REQUIRE(e[1].statePlugin == "hyperion");
+	REQUIRE(e[1].stateCommand == "AMBI");
+	REQUIRE(e[1].plugin == "hyperion");
+	REQUIRE(e[2].action == eEntryAction::Menu);
+	REQUIRE(e[2].stateCommand == "STAT");
+	REQUIRE(e[3].statePlugin.empty());
+	REQUIRE(e[3].stateCommand.empty());
+	REQUIRE(e[4].stateAction == eEntryAction::Shell);
+	REQUIRE(e[4].statePlugin.empty());
+	REQUIRE(e[4].stateCommand == "vcgencmd measure_temp | cut -d= -f2");
+	REQUIRE(e[4].command == "true");
+}
+
 TEST_CASE("actionmenu.conf - submenus", "[menuconf]") {
 	cMenuConfig config;
 
@@ -112,6 +142,12 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A key Ok\n",                     "line 1: the closing quote of the text is missing" },
 		{ "1 \"\" key Ok\n",                    "line 1: the text is empty" },
 		{ "1 \"A\"\n",                          "line 1: the action is missing" },
+		{ "1 \"A\" [svdrp drmdevice PASS svdrp x y\n", "line 1: the closing ']' of the state is missing" },
+		{ "1 \"A\" [svdrp drmdevice] svdrp x y\n",     "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
+		{ "1 \"A\" [drmdevice PASS] svdrp x y\n",      "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
+		{ "1 \"A\" [shell] svdrp x y\n",               "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
+		{ "1 \"A\" [] svdrp x y\n",                    "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
+		{ "1 \"A\" [svdrp drmdevice PASS]\n",          "line 1: the action is missing" },
 		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel or {)" },
 		{ "1 \"A\" svdrp drmdevice\n",          "line 1: svdrp needs a plugin and a command" },
 		{ "1 \"A\" plugin\n",                   "line 1: plugin needs the name of a plugin" },

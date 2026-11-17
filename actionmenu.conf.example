@@ -1,9 +1,12 @@
 # actionmenu.conf - entries of the action menu
 #
-# <key> "<text>" <action>
-# <key> "<text>" {
+# <key> "<text>" [<state>] <action>
+# <key> "<text>" [<state>] {
 #     <entries of the submenu>
 # }
+#
+# state:  [svdrp <plugin> <command>] or [shell <command>], the reply or the output
+#         is shown as state of the entry
 #
 # key:    0 - 9, Red, Green, Yellow, Blue or - (no key, only in the list)
 # action: svdrp <plugin> <command> [<options>]   SVDRP command of a plugin
@@ -16,7 +19,7 @@
 Red     "Output"            {
     1   "Detach"            svdrp drmdevice DETA
     2   "Attach"            svdrp drmdevice ATTA
-    3   "Passthrough"       svdrp drmdevice PASS toggle
+    3   "Passthrough"       [svdrp drmdevice PASS] svdrp! drmdevice PASS toggle
 }
 Green   "Das Erste"         channel S19.2E-1-1019-10301
 Yellow  "ZDF"               channel S19.2E-1-1079-28006
@@ -27,7 +30,7 @@ Blue    "Picture in picture" {
     4   "Swap channels"     svdrp drmdevice PIPC
     5   "Swap position"     svdrp! drmdevice PIPP
 }
-1       "Ambient light"     svdrp hyperion AMBI toggle
+1       "Ambient light"     [svdrp hyperion AMBI] svdrp! hyperion AMBI toggle
 2       "EPG search"        plugin epgsearch
 3       "Timers"            key Timers
 4       "Zoom"              svdrp drmdevice ZOOM next

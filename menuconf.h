@@ -32,13 +32,16 @@ enum class eEntryAction {
  * Entry of a menu
  */
 struct sMenuEntry {
-	std::string key;                             ///< 0 - 9, Red, Green, Yellow, Blue or empty (only selectable in the list)
-	std::string text;                            ///< text in the menu
-	eEntryAction action = eEntryAction::Menu;    ///< what the entry does
-	bool keepOpen = false;                       ///< the menu stays open after the action
-	std::string plugin;                          ///< plugin of the SVDRP command or the plugin to open
-	std::string command;                         ///< SVDRP command with its options, the keys, the shell command or the channel
-	std::vector<sMenuEntry> entries;             ///< entries of a submenu
+	std::string key;                                   ///< 0 - 9, Red, Green, Yellow, Blue or empty (only selectable in the list)
+	std::string text;                                  ///< text in the menu
+	eEntryAction action = eEntryAction::Menu;          ///< what the entry does
+	bool keepOpen = false;                             ///< the menu stays open after the action
+	std::string plugin;                                ///< plugin of the SVDRP command or the plugin to open
+	std::string command;                               ///< SVDRP command with its options, the keys, the shell command or the channel
+	eEntryAction stateAction = eEntryAction::Svdrp;    ///< Svdrp or Shell: the command, whose reply or output is shown as state
+	std::string statePlugin;                           ///< plugin of the SVDRP command of the state
+	std::string stateCommand;                          ///< SVDRP or shell command of the state (empty: no state)
+	std::vector<sMenuEntry> entries;                   ///< entries of a submenu
 };
 
 /**
