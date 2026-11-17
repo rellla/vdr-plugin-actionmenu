@@ -123,6 +123,17 @@ action
 	svdrp! and shell!
 		The same, but the menu stays open.
 
+The commands of svdrp, shell and output and of the states may contain placeholders, which are
+replaced, when the command is run:
+
+	%channel%     number of the current channel
+	%channelid%   ID of the current channel (e.g. S19.2E-1-1019-10301)
+	%recording%   directory of the replayed recording (empty without replay), put it in
+	              quotes in shell commands
+
+E.g. "svdrp drmdevice PION %channel%" shows the current channel as pip. Other text with "%"
+stays as it is.
+
 Empty lines and lines starting with "#" are ignored. See actionmenu.conf.example.
 
 Command line options

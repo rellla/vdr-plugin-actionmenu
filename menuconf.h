@@ -13,6 +13,7 @@
 #define __ACTIONMENU_MENUCONF_H
 
 #include <istream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -64,5 +65,7 @@ private:
 	bool Fail(int, const std::string &);
 	bool ParseEntry(const std::string &, int, sMenuEntry &);
 };
+
+std::string ExpandPlaceholders(const std::string &, const std::map<std::string, std::string> &);
 
 #endif

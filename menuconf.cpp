@@ -26,7 +26,8 @@
  *     channel <number or channel ID>
  *     output <command>
  *
- * "svdrp!" and "shell!" keep the menu open. Empty lines and lines starting with
+ * "svdrp!" and "shell!" keep the menu open. The commands may contain the
+ * placeholders %channel%, %channelid% and %recording% (see ExpandPlaceholders()). Empty lines and lines starting with
  * '#' are ignored.
  *
  * @copyright 2026 by Andreas Baierl. All Rights Reserved.
@@ -294,4 +295,41 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		return Fail(line, word + "! isn't possible, only svdrp! and shell! keep the menu open");
 
 	return true;
+}
+
+/**
+ * Replace the placeholders of a command
+ *
+ * A placeholder is a name between two '%', e.g. %channel%.
+ *
+ * @param text         the command
+ * @param values       the values of the placeholders (the names without '%')
+ *
+ * @return the command with the values, an unknown placeholder stays as it is
+ */
+std::string ExpandPlaceholders(const std::string &text, const std::map<std::string, std::string> &values)
+{
+	std::string result;
+	size_t pos = 0;
+	while (pos < text.size()) {
+		size_t start = text.find('%', pos);
+		size_t end = start == std::string::npos ? std::string::npos : text.find('%', start + 1);
+		if (end == std::string::npos) {
+			result += text.substr(pos);
+			break;
+		}
+
+		result += text.substr(pos, start - pos);
+		auto value = values.find(text.substr(start + 1, end - start - 1));
+		if (value == values.end()) {
+			// the second '%' may start a placeholder
+			result += '%';
+			pos = start + 1;
+		} else {
+			result += value->second;
+			pos = end + 1;
+		}
+	}
+
+	return result;
 }

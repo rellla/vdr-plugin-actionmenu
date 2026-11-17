@@ -9,6 +9,7 @@
  * @license{AGPL-3.0-or-later}
  */
 
+#include <map>
 #include <string>
 
 #include <vdr/channels.h>
@@ -40,6 +41,35 @@ int ColorIndex(const std::string &key)
 }
 
 /**
+ * Replace the placeholders of a command with the current values
+ *
+ * @param command      the command
+ *
+ * @return the command with %channel% (number of the current channel), %channelid%
+ *         (its ID) and %recording% (directory of the replayed recording)
+ */
+std::string Expand(const std::string &command)
+{
+	if (command.find('%') == std::string::npos)
+		return command;
+
+	std::map<std::string, std::string> values = { { "channel", "" }, { "channelid", "" }, { "recording", "" } };
+
+	int number = cDevice::CurrentChannel();
+	if (number) {
+		values["channel"] = std::to_string(number);
+		LOCK_CHANNELS_READ;
+		if (const cChannel *channel = Channels->GetByNumber(number))
+			values["channelid"] = *channel->GetChannelID().ToString();
+	}
+
+	if (const char *recording = cReplayControl::NowReplaying())
+		values["recording"] = recording;
+
+	return ExpandPlaceholders(command, values);
+}
+
+/**
  * Result of an SVDRP command
  */
 enum class eSvdrpResult {
@@ -53,7 +83,7 @@ enum class eSvdrpResult {
  * Run an SVDRP command of a plugin
  *
  * @param pluginName       the plugin
- * @param commandLine      the command with its options
+ * @param commandLine      the command with its options (with placeholders)
  * @param[out] reply       the first line of the reply
  *
  * @return the result
@@ -64,11 +94,12 @@ eSvdrpResult Svdrp(const std::string &pluginName, const std::string &commandLine
 	if (!plugin)
 		return eSvdrpResult::NoPlugin;
 
+	std::string line = Expand(commandLine);
 	std::string option;
-	size_t end = commandLine.find_first_of(" \t");
-	std::string command = commandLine.substr(0, end);
-	if (end != std::string::npos)
-		option = commandLine.substr(commandLine.find_first_not_of(" \t", end));
+	size_t end = line.find_first_of(" \t");
+	std::string command = line.substr(0, end);
+	if (end != std::string::npos && line.find_first_not_of(" \t", end) != std::string::npos)
+		option = line.substr(line.find_first_not_of(" \t", end));
 
 	int replyCode = 900;
 	cString text = plugin->SVDRPCommand(command.c_str(), option.empty() ? nullptr : option.c_str(), replyCode);
@@ -84,7 +115,7 @@ eSvdrpResult Svdrp(const std::string &pluginName, const std::string &commandLine
 /**
  * Run a shell command and wait for its end
  *
- * @param command      the command
+ * @param command      the command (with placeholders)
  *
  * @return the output of the command (stdout)
  */
@@ -92,7 +123,7 @@ std::string ShellOutput(const std::string &command)
 {
 	std::string output;
 	cPipe pipe;
-	if (!pipe.Open(command.c_str(), "r")) {
+	if (!pipe.Open(Expand(command).c_str(), "r")) {
 		esyslog("actionmenu: can't run %s", command.c_str());
 		return output;
 	}
@@ -299,7 +330,7 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 		case eEntryAction::Keys:
 			return RunKeys(entry);
 		case eEntryAction::Shell:
-			SystemExec(entry.command.c_str(), true);
+			SystemExec(Expand(entry.command).c_str(), true);
 			if (!entry.keepOpen)
 				return osEnd;
 			UpdateStates();

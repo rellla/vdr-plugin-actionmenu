@@ -255,3 +255,21 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		REQUIRE(config.Error() == "can't open /nonexistent/actionmenu.conf");
 	}
 }
+
+TEST_CASE("Placeholders", "[menuconf]") {
+	const std::map<std::string, std::string> values = {
+		{ "channel", "12" }, { "channelid", "S19.2E-1-1019-10301" }, { "recording", "" },
+	};
+
+	REQUIRE(ExpandPlaceholders("PION %channel%", values) == "PION 12");
+	REQUIRE(ExpandPlaceholders("x %channelid% %channel%%channel%", values) == "x S19.2E-1-1019-10301 1212");
+	REQUIRE(ExpandPlaceholders("rm \"%recording%\"", values) == "rm \"\"");
+	REQUIRE(ExpandPlaceholders("no placeholder", values) == "no placeholder");
+	// unknown placeholders and single '%' stay
+	REQUIRE(ExpandPlaceholders("date +%H:%M", values) == "date +%H:%M");
+	REQUIRE(ExpandPlaceholders("100% %unknown% %channel%", values) == "100% %unknown% 12");
+	REQUIRE(ExpandPlaceholders("50%%channel%", values) == "50%12");
+	REQUIRE(ExpandPlaceholders("%", values) == "%");
+	REQUIRE(ExpandPlaceholders("%channel", values) == "%channel");
+	REQUIRE(ExpandPlaceholders("", values).empty());
+}
