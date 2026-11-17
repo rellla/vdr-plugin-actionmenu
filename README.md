@@ -35,6 +35,16 @@ After an action, the menu is closed and VDR shows the reply of an SVDRP command 
 Actions with a "!" keep the menu open (e.g. to switch the pip channel several times), they show
 the reply in the status line of the menu.
 
+Keys after @actionmenu in a key macro run an entry directly, without showing the menu:
+
+	User2   @actionmenu Blue 2  runs entry 2 of the submenu behind Blue
+	User3   @actionmenu 1       runs entry 1 of the menu
+	User4   @actionmenu Red     opens the submenu behind Red (or runs the entry of Red)
+
+The menu isn't shown and the action closes it, also with "!". Replies and errors are shown as
+messages, the output of "output" is shown on its page. If a key has no entry, the menu is opened
+there and gets the rest of the keys.
+
 Configuration
 -------------
 The entries are read from actionmenu.conf in the config directory of the plugin (e.g.

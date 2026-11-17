@@ -20,6 +20,7 @@
 #include <vdr/i18n.h>
 #include <vdr/menuitems.h>
 #include <vdr/plugin.h>
+#include <vdr/remote.h>
 #include <vdr/skins.h>
 
 #include "menuconf.h"
@@ -120,7 +121,33 @@ cOsdObject *cPluginActionmenu::MainMenuAction(void)
 		return nullptr;
 	}
 
-	return new cActionMenu(tr(MAINMENUENTRY), config.Entries());
+	// a key macro like "@actionmenu Blue 2" runs the entry without showing the menu,
+	// its keys are already waiting
+	const std::vector<sMenuEntry> *entries = &config.Entries();
+	std::string title = tr(MAINMENUENTRY);
+	while (cRemote::HasKeys()) {
+		eKeys key = cRemote::Get(0);
+		const sMenuEntry *entry = FindEntry(*entries, key);
+		if (!entry) {
+			cRemote::Put(key, true);
+			break;
+		}
+
+		// a submenu is opened directly
+		if (entry->action == eEntryAction::Menu) {
+			entries = &entry->entries;
+			title = entry->text;
+			continue;
+		}
+
+		cActionMenu *menu = new cActionMenu(title.c_str(), *entries);
+		if (menu->RunDirectly(key))
+			return menu;
+		delete menu;
+		return nullptr;
+	}
+
+	return new cActionMenu(title.c_str(), *entries);
 }
 
 /**

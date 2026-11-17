@@ -172,6 +172,21 @@ std::string EntryText(const sMenuEntry &entry)
 }
 
 /**
+ * Check, if an entry is shown now
+ *
+ * @param entry        the entry
+ *
+ * @return true, if the entry is in the current section (without replay or during a replay)
+ */
+bool IsShown(const sMenuEntry &entry)
+{
+	cDevice *device = cDevice::PrimaryDevice();
+	eMenuSection current = device->Replaying() && !device->Transferring() ? eMenuSection::Replay : eMenuSection::Live;
+
+	return entry.section == eMenuSection::All || entry.section == current;
+}
+
+/**
  * Get the entries, which are shown now
  *
  * @param entries      all entries of the menu
@@ -180,12 +195,9 @@ std::string EntryText(const sMenuEntry &entry)
  */
 std::vector<sMenuEntry> CurrentEntries(const std::vector<sMenuEntry> &entries)
 {
-	cDevice *device = cDevice::PrimaryDevice();
-	eMenuSection current = device->Replaying() && !device->Transferring() ? eMenuSection::Replay : eMenuSection::Live;
-
 	std::vector<sMenuEntry> result;
 	for (const sMenuEntry &entry : entries) {
-		if (entry.section == eMenuSection::All || entry.section == current)
+		if (IsShown(entry))
 			result.push_back(entry);
 	}
 
@@ -228,6 +240,32 @@ private:
 };
 
 } // namespace
+
+/**
+ * Find the entry of a key, which is shown now
+ *
+ * @param entries      the entries of a menu
+ * @param key          a number or color key
+ *
+ * @return the entry (nullptr, if no shown entry has the key)
+ */
+const sMenuEntry *FindEntry(const std::vector<sMenuEntry> &entries, eKeys key)
+{
+	std::string name;
+	if (key >= kRed && key <= kBlue)
+		name = COLORS[key - kRed];
+	else if (key >= k0 && key <= k9)
+		name = std::string(1, '0' + (key - k0));
+	else
+		return nullptr;
+
+	for (const sMenuEntry &entry : entries) {
+		if (entry.key == name && IsShown(entry))
+			return &entry;
+	}
+
+	return nullptr;
+}
 
 /**
  * Create the menu
@@ -296,7 +334,8 @@ void cActionMenu::RefreshStates(void)
  */
 void cActionMenu::UpdateStates(void)
 {
-	if (!m_hasStates)
+	// without the menu, nothing is shown
+	if (!m_hasStates || m_direct)
 		return;
 
 	for (cOsdItem *item = First(); item; item = Next(item))
@@ -334,31 +373,36 @@ eOSState cActionMenu::ProcessKey(eKeys key)
 		return item ? Run(item->Entry()) : osContinue;
 	}
 
-	const sMenuEntry *entry = Find(key);
+	const sMenuEntry *entry = FindEntry(m_entries, key);
 	return entry ? Run(*entry) : state;
 }
 
 /**
- * Find the entry of a key
+ * Run the entry of a key without showing the menu
  *
- * @param key          the key
+ * This is used by a key macro like "@actionmenu Blue 2". The actions close the menu
+ * (also svdrp! and shell!), errors and replies are shown as messages.
  *
- * @return the entry (nullptr, if no entry has the key)
+ * @param key          the key of the entry
+ *
+ * @return true, if the menu has to be shown (the output of a command)
  */
-const sMenuEntry *cActionMenu::Find(eKeys key) const
+bool cActionMenu::RunDirectly(eKeys key)
 {
-	if (key >= kRed && key <= kBlue)
-		return m_colorEntries[key - kRed];
+	const sMenuEntry *entry = FindEntry(m_entries, key);
+	if (!entry)
+		return false;
 
-	if (key >= k0 && key <= k9) {
-		std::string digit(1, '0' + (key - k0));
-		for (const sMenuEntry &entry : m_entries) {
-			if (entry.key == digit)
-				return &entry;
-		}
-	}
+	sMenuEntry action = *entry;
+	action.keepOpen = false;
+	for (sMenuEntry &chained : action.actions)
+		chained.keepOpen = false;
 
-	return nullptr;
+	m_direct = true;
+	Run(action);
+	m_direct = false;
+
+	return HasSubMenu();
 }
 
 /**
@@ -572,7 +616,10 @@ eOSState cActionMenu::RunChain(const sMenuEntry &entry)
 eOSState cActionMenu::Error(const char *text)
 {
 	m_failed = true;
-	Skins.Message(mtError, text);
+	if (m_direct)
+		Skins.QueueMessage(mtError, text);
+	else
+		Skins.Message(mtError, text);
 
 	return osContinue;
 }

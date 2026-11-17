@@ -32,6 +32,7 @@ class cActionMenu : public cOsdMenu {
 public:
 	cActionMenu(const char *, const std::vector<sMenuEntry> &);
 	virtual eOSState ProcessKey(eKeys);
+	bool RunDirectly(eKeys);
 
 private:
 	std::vector<sMenuEntry> m_entries;               ///< the shown entries (copied, the menu outlives the configuration)
@@ -41,11 +42,11 @@ private:
 	bool m_hasRefresh = false;                       ///< true, if a state is read again periodically
 	uint64_t m_nextHelpRefresh[4] = {};              ///< time to read the states of the color buttons again
 	bool m_failed = false;                           ///< set by Error(), stops a chain
+	bool m_direct = false;                           ///< an entry is run without showing the menu (see RunDirectly())
 
 	void SetHelpTexts(void);
 	void UpdateStates(void);
 	void RefreshStates(void);
-	const sMenuEntry *Find(eKeys) const;
 	eOSState Run(const sMenuEntry &);
 	eOSState RunSvdrp(const sMenuEntry &);
 	eOSState RunKeys(const sMenuEntry &);
@@ -55,5 +56,7 @@ private:
 	eOSState RunChain(const sMenuEntry &);
 	eOSState Error(const char *);
 };
+
+const sMenuEntry *FindEntry(const std::vector<sMenuEntry> &, eKeys);
 
 #endif
