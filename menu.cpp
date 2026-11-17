@@ -11,6 +11,8 @@
 
 #include <string>
 
+#include <vdr/channels.h>
+#include <vdr/device.h>
 #include <vdr/i18n.h>
 #include <vdr/plugin.h>
 #include <vdr/remote.h>
@@ -147,6 +149,8 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 		case eEntryAction::Shell:
 			SystemExec(entry.command.c_str(), true);
 			return entry.keepOpen ? osContinue : osEnd;
+		case eEntryAction::Channel:
+			return RunChannel(entry);
 	}
 
 	return osContinue;
@@ -241,6 +245,29 @@ eOSState cActionMenu::RunPlugin(const sMenuEntry &entry)
 		return Error(cString::sprintf(tr("The plugin %s can't be opened now"), entry.plugin.c_str()));
 
 	return osEnd;
+}
+
+/**
+ * Switch to a channel
+ *
+ * @param entry        the entry with the number or the ID of the channel
+ *
+ * @return osEnd, if the channel is switched, otherwise osContinue
+ */
+eOSState cActionMenu::RunChannel(const sMenuEntry &entry)
+{
+	const char *channel = entry.command.c_str();
+
+	{
+		LOCK_CHANNELS_READ;
+		const cChannel *ch = isnumber(channel) ? Channels->GetByNumber(atoi(channel))
+		                                       : Channels->GetByChannelID(tChannelID::FromString(channel));
+		if (ch)
+			return cDevice::PrimaryDevice()->SwitchChannel(ch, true) ? osEnd : osContinue;
+	}
+
+	// not with the lock of the channels, the message waits
+	return Error(cString::sprintf(tr("Channel %s not found"), channel));
 }
 
 /**

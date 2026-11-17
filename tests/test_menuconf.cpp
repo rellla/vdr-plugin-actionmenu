@@ -33,10 +33,12 @@ TEST_CASE("actionmenu.conf - actions", "[menuconf]") {
 		"  2 \"Zoom\"           svdrp!  drmdevice  ZOOM next \n"
 		"red \"EPG search\"     plugin epgsearch\n"
 		"-   \"Schedule\"       key Schedule Down\n"
-		"Blue \"Script\"        shell! /usr/bin/script.sh --arg \"x y\"\n"));
+		"Blue \"Script\"        shell! /usr/bin/script.sh --arg \"x y\"\n"
+		"5   \"Das Erste\"      channel 1\n"
+		"6   \"ZDF\"            channel S19.2E-1-1079-28006\n"));
 
 	const auto &e = config.Entries();
-	REQUIRE(e.size() == 5);
+	REQUIRE(e.size() == 7);
 
 	REQUIRE(e[0].key == "1");
 	REQUIRE(e[0].text == "PiP on/off");
@@ -61,6 +63,10 @@ TEST_CASE("actionmenu.conf - actions", "[menuconf]") {
 	REQUIRE(e[4].action == eEntryAction::Shell);
 	REQUIRE(e[4].keepOpen);
 	REQUIRE(e[4].command == "/usr/bin/script.sh --arg \"x y\"");
+
+	REQUIRE(e[5].action == eEntryAction::Channel);
+	REQUIRE(e[5].command == "1");
+	REQUIRE(e[6].command == "S19.2E-1-1079-28006");
 }
 
 TEST_CASE("actionmenu.conf - submenus", "[menuconf]") {
@@ -106,12 +112,15 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A key Ok\n",                     "line 1: the closing quote of the text is missing" },
 		{ "1 \"\" key Ok\n",                    "line 1: the text is empty" },
 		{ "1 \"A\"\n",                          "line 1: the action is missing" },
-		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell or {)" },
+		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel or {)" },
 		{ "1 \"A\" svdrp drmdevice\n",          "line 1: svdrp needs a plugin and a command" },
 		{ "1 \"A\" plugin\n",                   "line 1: plugin needs the name of a plugin" },
 		{ "1 \"A\" plugin a b\n",               "line 1: plugin needs the name of a plugin" },
 		{ "1 \"A\" key\n",                      "line 1: key needs at least one key" },
 		{ "1 \"A\" shell\n",                    "line 1: shell needs a command" },
+		{ "1 \"A\" channel\n",                  "line 1: channel needs the number or the ID of a channel" },
+		{ "1 \"A\" channel 1 2\n",              "line 1: channel needs the number or the ID of a channel" },
+		{ "1 \"A\" channel! 1\n",               "line 1: channel! isn't possible, only svdrp! and shell! keep the menu open" },
 		{ "1 \"A\" key! Ok\n",                  "line 1: key! isn't possible, only svdrp! and shell! keep the menu open" },
 		{ "1 \"A\" plugin! epgsearch\n",        "line 1: plugin! isn't possible, only svdrp! and shell! keep the menu open" },
 		{ "\n1 \"A\" key Ok\n1 \"B\" key Ok\n", "line 3: the key 1 is already used in this menu" },

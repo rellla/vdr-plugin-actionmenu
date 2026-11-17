@@ -68,6 +68,10 @@ action
 		The names are the ones of keymacros.conf.
 	shell <command>
 		Run a command in the background (with the user of VDR, without output).
+	channel <number | channel ID>
+		Switch to a channel, e.g. "channel 1" or "channel S19.2E-1-1019-10301" (the ID
+		stays valid, if the channels are sorted differently). With the color keys,
+		these are favorite channels.
 	svdrp! and shell!
 		The same, but the menu stays open.
 

@@ -40,3 +40,7 @@ msgstr "Unbekannte Taste %s"
 #, c-format
 msgid "The plugin %s can't be opened now"
 msgstr "Das Plugin %s kann gerade nicht geöffnet werden"
+
+#, c-format
+msgid "Channel %s not found"
+msgstr "Kanal %s nicht gefunden"

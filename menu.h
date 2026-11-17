@@ -40,6 +40,7 @@ private:
 	eOSState RunSvdrp(const sMenuEntry &);
 	eOSState RunKeys(const sMenuEntry &);
 	eOSState RunPlugin(const sMenuEntry &);
+	eOSState RunChannel(const sMenuEntry &);
 	eOSState Error(const char *);
 };
 

@@ -25,6 +25,7 @@ enum class eEntryAction {
 	Plugin,   ///< open the main menu of a plugin
 	Keys,     ///< send keys to VDR
 	Shell,    ///< run a shell command in the background
+	Channel,  ///< switch to a channel
 };
 
 /**
@@ -36,7 +37,7 @@ struct sMenuEntry {
 	eEntryAction action = eEntryAction::Menu;    ///< what the entry does
 	bool keepOpen = false;                       ///< the menu stays open after the action
 	std::string plugin;                          ///< plugin of the SVDRP command or the plugin to open
-	std::string command;                         ///< SVDRP command with its options, the keys or the shell command
+	std::string command;                         ///< SVDRP command with its options, the keys, the shell command or the channel
 	std::vector<sMenuEntry> entries;             ///< entries of a submenu
 };
 

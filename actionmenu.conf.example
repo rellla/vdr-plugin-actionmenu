@@ -10,6 +10,7 @@
 #         plugin <plugin>                        open the main menu of a plugin
 #         key <key> [<key> ...]                  send keys to VDR
 #         shell <command>                        run a command in the background
+#         channel <number | channel ID>          switch to a channel
 #         svdrp! and shell! keep the menu open.
 
 Red     "Output"            {
@@ -17,7 +18,8 @@ Red     "Output"            {
     2   "Attach"            svdrp drmdevice ATTA
     3   "Passthrough"       svdrp drmdevice PASS toggle
 }
-Green   "Zoom"              svdrp drmdevice ZOOM next
+Green   "Das Erste"         channel S19.2E-1-1019-10301
+Yellow  "ZDF"               channel S19.2E-1-1079-28006
 Blue    "Picture in picture" {
     1   "On/off"            svdrp drmdevice PITO
     2   "Channel +"         svdrp! drmdevice PIPU
@@ -28,4 +30,5 @@ Blue    "Picture in picture" {
 1       "Ambient light"     svdrp hyperion AMBI toggle
 2       "EPG search"        plugin epgsearch
 3       "Timers"            key Timers
+4       "Zoom"              svdrp drmdevice ZOOM next
 -       "Restart VDR"       shell systemctl restart vdr
