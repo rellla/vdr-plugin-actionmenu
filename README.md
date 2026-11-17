@@ -50,6 +50,10 @@ Every line is an entry or the end of a submenu:
 	<key> "<text>" [<state>] {
 	    <entries of the submenu>
 	}
+	<key> "<text>"[?] [<state>] (
+	    <action>
+	    ...
+	)
 
 key
 	0 - 9, Red, Green, Yellow, Blue or "-" (no key, the entry is only selectable in the list).
@@ -128,6 +132,17 @@ action
 		command, like with the commands of commands.conf.
 	svdrp! and shell!
 		The same, but the menu stays open.
+
+A chain runs several actions in parentheses one after the other, e.g.
+
+	1 "TV off"? (
+	    svdrp drmdevice DETA
+	    shell /usr/local/bin/tv-off.sh
+	)
+
+The chain stops at the first error. The menu is closed after the chain, unless all actions keep
+it open (svdrp! and shell!). plugin, key and output can only be the last action, because they
+leave the menu.
 
 The lines [live], [replay] and [all] start a section of a menu. Its entries are only shown
 without replay, during a replay (recordings and other players, e.g. the mediaplayer) or always.

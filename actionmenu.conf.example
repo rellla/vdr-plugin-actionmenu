@@ -3,6 +3,9 @@
 # <key> "<text>"[?] [<state> [<refresh>]] <action>
 # <key> "<text>" <state> [<refresh>]           (only shows the state)
 # - "<text>"                                   (header)
+# <key> "<text>"[?] [<state>] (                (chain of actions)
+#     <action>
+# )
 # <key> "<text>" [<state>] {
 #     <entries of the submenu>
 # }
@@ -37,11 +40,11 @@ Green   "Recording info"    output ls -l "%recording%"
 [all]
 Blue    "Picture in picture" {
     1   "On/off"            svdrp drmdevice PITO
-    6   "Current channel"   svdrp drmdevice PION %channel%
     2   "Channel +"         svdrp! drmdevice PIPU
     3   "Channel -"         svdrp! drmdevice PIPD
     4   "Swap channels"     svdrp drmdevice PIPC
     5   "Swap position"     svdrp! drmdevice PIPP
+    6   "Current channel"   svdrp drmdevice PION %channel%
 }
 -       "Functions"
 1       "Ambient light"     [svdrp hyperion AMBI] svdrp! hyperion AMBI toggle
@@ -51,4 +54,8 @@ Blue    "Picture in picture" {
 5       "Free space"        output df -h /storage 2>&1
 -       "System"
 -       "Temperature"       [shell vcgencmd measure_temp | cut -d= -f2] [refresh]
+6       "TV off"?           (
+        svdrp hyperion AMBI off
+        svdrp drmdevice DETA
+)
 -       "Restart VDR"?      shell systemctl restart vdr

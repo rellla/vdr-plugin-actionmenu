@@ -29,6 +29,7 @@ enum class eEntryAction {
 	Channel,  ///< switch to a channel
 	Output,   ///< run a shell command and show its output
 	Info,     ///< no action, the entry only shows its state or is a header without key
+	Chain,    ///< run the actions one after the other
 };
 
 /**
@@ -57,6 +58,7 @@ struct sMenuEntry {
 	std::string stateCommand;                          ///< SVDRP or shell command of the state (empty: no state)
 	int refreshSeconds = 0;                            ///< read the state again after this time, while the menu is shown (0: never)
 	std::vector<sMenuEntry> entries;                   ///< entries of a submenu
+	std::vector<sMenuEntry> actions;                   ///< actions of a chain
 };
 
 /**
@@ -75,6 +77,7 @@ private:
 
 	bool Fail(int, const std::string &);
 	bool ParseEntry(const std::string &, int, sMenuEntry &);
+	bool ParseAction(const std::string &, int, sMenuEntry &);
 };
 
 std::string ExpandPlaceholders(const std::string &, const std::map<std::string, std::string> &);

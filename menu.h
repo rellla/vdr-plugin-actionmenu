@@ -40,6 +40,7 @@ private:
 	bool m_hasStates = false;                        ///< true, if an entry shows its state
 	bool m_hasRefresh = false;                       ///< true, if a state is read again periodically
 	uint64_t m_nextHelpRefresh[4] = {};              ///< time to read the states of the color buttons again
+	bool m_failed = false;                           ///< set by Error(), stops a chain
 
 	void SetHelpTexts(void);
 	void UpdateStates(void);
@@ -51,6 +52,7 @@ private:
 	eOSState RunPlugin(const sMenuEntry &);
 	eOSState RunChannel(const sMenuEntry &);
 	eOSState RunOutput(const sMenuEntry &);
+	eOSState RunChain(const sMenuEntry &);
 	eOSState Error(const char *);
 };
 

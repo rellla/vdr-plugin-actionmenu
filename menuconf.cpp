@@ -27,6 +27,13 @@
  *     channel <number or channel ID>
  *     output <command>
  *
+ * A chain runs several actions one after the other:
+ *
+ *     <key> "<text>" (
+ *         <action>
+ *         ...
+ *     )
+ *
  * The lines [live], [replay] and [all] start a section of the menu, whose
  * entries are only shown without replay, during a replay or always (the
  * default). A section ends with the next one or the end of the (sub)menu.
@@ -148,12 +155,37 @@ bool cMenuConfig::Parse(std::istream &in)
 		eMenuSection section;               ///< the current section of the menu
 	};
 	std::vector<sOpenMenu> menus = { { &m_entries, 0, eMenuSection::All } };
+	sMenuEntry *chain = nullptr;   // the chain, whose actions are read
+	int chainLine = 0;          // line of the start of the chain
 
 	std::string text;
 	for (int line = 1; std::getline(in, text); line++) {
 		text = Trim(text);
 		if (text.empty() || text[0] == '#')
 			continue;
+
+		if (chain) {
+			if (text == ")") {
+				if (chain->actions.empty())
+					return Fail(chainLine, "the chain has no actions");
+				chain = nullptr;
+				continue;
+			}
+
+			// these actions leave the menu
+			if (!chain->actions.empty()) {
+				eEntryAction last = chain->actions.back().action;
+				if (last == eEntryAction::Plugin || last == eEntryAction::Keys || last == eEntryAction::Output)
+					return Fail(line, "plugin, key and output can only be the last action of a chain");
+			}
+
+			sMenuEntry action;
+			action.text = chain->text;
+			if (!ParseAction(text, line, action))
+				return false;
+			chain->actions.push_back(action);
+			continue;
+		}
 
 		if (text == "}") {
 			if (menus.size() == 1)
@@ -191,11 +223,17 @@ bool cMenuConfig::Parse(std::istream &in)
 		}
 
 		menu.push_back(entry);
-		// the entries of the menu don't change, until its submenu is closed
+		// the entries of the menu don't change, until its submenu or chain is closed
 		if (entry.action == eEntryAction::Menu)
 			menus.push_back({ &menu.back().entries, line, eMenuSection::All });
+		if (entry.action == eEntryAction::Chain) {
+			chain = &menu.back();
+			chainLine = line;
+		}
 	}
 
+	if (chain)
+		return Fail(chainLine, "the chain isn't closed with ')'");
 	if (menus.size() > 1)
 		return Fail(menus.back().line, "the submenu isn't closed with '}'");
 
@@ -291,7 +329,27 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		return true;
 	}
 
-	word = FirstWord(action, rest);
+	if (action == "(") {
+		entry.action = eEntryAction::Chain;
+		return true;
+	}
+
+	return ParseAction(action, line, entry);
+}
+
+/**
+ * Read an action
+ *
+ * @param action       the action with its arguments
+ * @param line         number of the line
+ * @param[out] entry   the entry, which gets the action
+ *
+ * @return false on errors
+ */
+bool cMenuConfig::ParseAction(const std::string &action, int line, sMenuEntry &entry)
+{
+	std::string rest;
+	std::string word = FirstWord(action, rest);
 	entry.keepOpen = !word.empty() && word.back() == '!';
 	if (entry.keepOpen)
 		word.pop_back();
@@ -329,7 +387,7 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 	} else if (word.empty()) {
 		return Fail(line, "the action is missing");
 	} else {
-		return Fail(line, "unknown action '" + word + "' (svdrp, plugin, key, shell, channel, output or {)");
+		return Fail(line, "unknown action '" + word + "' (svdrp, plugin, key, shell, channel, output, { or ()");
 	}
 
 	// the other actions close the menu to let VDR or the plugin handle it

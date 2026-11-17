@@ -103,6 +103,56 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 	REQUIRE(e[4].command == "true");
 }
 
+TEST_CASE("actionmenu.conf - chains", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"1 \"TV off\"? [svdrp drmdevice STAT] (\n"
+		"    svdrp drmdevice DETA\n"
+		"    # comment\n"
+		"\n"
+		"    shell /usr/local/bin/tv-off.sh\n"
+		"    key Power\n"
+		")\n"
+		"2 \"PiP +\" (\n"
+		"    svdrp! drmdevice PIPU\n"
+		"    shell! true\n"
+		")\n"
+		"3 \"Next\" key Ok\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e.size() == 3);
+	REQUIRE(e[0].action == eEntryAction::Chain);
+	REQUIRE(e[0].confirm);
+	REQUIRE(e[0].stateCommand == "STAT");
+	REQUIRE(e[0].actions.size() == 3);
+	REQUIRE(e[0].actions[0].action == eEntryAction::Svdrp);
+	REQUIRE(e[0].actions[0].command == "DETA");
+	REQUIRE(e[0].actions[0].text == "TV off");
+	REQUIRE(e[0].actions[1].action == eEntryAction::Shell);
+	REQUIRE(e[0].actions[2].action == eEntryAction::Keys);
+	REQUIRE(e[1].actions[0].keepOpen);
+	REQUIRE(e[1].actions[1].keepOpen);
+	REQUIRE(e[2].action == eEntryAction::Keys);
+
+	const std::pair<const char *, const char *> errors[] = {
+		{ "1 \"A\" (\n)\n",                                  "line 1: the chain has no actions" },
+		{ "1 \"A\" (\nkey Ok\n",                              "line 1: the chain isn't closed with ')'" },
+		{ "1 \"A\" (\nkey Ok\nshell x\n)\n",                 "line 3: plugin, key and output can only be the last action of a chain" },
+		{ "1 \"A\" (\noutput df\nkey Ok\n)\n",               "line 3: plugin, key and output can only be the last action of a chain" },
+		{ "1 \"A\" (\nplugin x\nplugin y\n)\n",              "line 3: plugin, key and output can only be the last action of a chain" },
+		{ "1 \"A\" (\nsvdrp x\n)\n",                          "line 2: svdrp needs a plugin and a command" },
+		{ "1 \"A\" (\n2 \"B\" key Ok\n)\n",                  "line 2: unknown action '2' (svdrp, plugin, key, shell, channel, output, { or ()" },
+		{ "1 \"A\" (\n{\n)\n",                                "line 2: unknown action '{' (svdrp, plugin, key, shell, channel, output, { or ()" },
+		{ "1 \"A\" (\nkey! Ok\n)\n",                          "line 2: key! isn't possible, only svdrp! and shell! keep the menu open" },
+	};
+	for (const auto &[text, error] : errors) {
+		INFO(text);
+		REQUIRE_FALSE(Parse(config, text));
+		REQUIRE(config.Error() == error);
+	}
+}
+
 TEST_CASE("actionmenu.conf - sections", "[menuconf]") {
 	cMenuConfig config;
 
@@ -293,8 +343,8 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A\" [] svdrp x y\n",                    "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\"? [svdrp drmdevice PASS]\n",         "line 1: an entry without action doesn't ask" },
 		{ "1 \"A\"? {\n}\n",                     "line 1: a submenu doesn't ask before it is opened" },
-		{ "1 \"A\" ? key Ok\n",                  "line 1: unknown action '?' (svdrp, plugin, key, shell, channel, output or {)" },
-		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel, output or {)" },
+		{ "1 \"A\" ? key Ok\n",                  "line 1: unknown action '?' (svdrp, plugin, key, shell, channel, output, { or ()" },
+		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel, output, { or ()" },
 		{ "1 \"A\" svdrp drmdevice\n",          "line 1: svdrp needs a plugin and a command" },
 		{ "1 \"A\" plugin\n",                   "line 1: plugin needs the name of a plugin" },
 		{ "1 \"A\" plugin a b\n",               "line 1: plugin needs the name of a plugin" },
@@ -347,4 +397,13 @@ TEST_CASE("Placeholders", "[menuconf]") {
 	REQUIRE(ExpandPlaceholders("%", values) == "%");
 	REQUIRE(ExpandPlaceholders("%channel", values) == "%channel");
 	REQUIRE(ExpandPlaceholders("", values).empty());
+}
+
+TEST_CASE("actionmenu.conf.example", "[menuconf]") {
+	cMenuConfig config;
+
+	bool loaded = config.Load("../actionmenu.conf.example");
+	INFO(config.Error());
+	REQUIRE(loaded);
+	REQUIRE_FALSE(config.Entries().empty());
 }

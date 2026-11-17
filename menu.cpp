@@ -398,6 +398,8 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 			// the key of the entry reads the states again
 			UpdateStates();
 			return osContinue;
+		case eEntryAction::Chain:
+			return RunChain(entry);
 	}
 
 	return osContinue;
@@ -532,6 +534,35 @@ eOSState cActionMenu::RunOutput(const sMenuEntry &entry)
 }
 
 /**
+ * Run the actions of a chain one after the other
+ *
+ * The chain stops at the first error. The menu stays open, if all actions keep
+ * it open.
+ *
+ * @param entry        the entry with the actions
+ *
+ * @return osEnd, if the menu is closed, otherwise osContinue
+ */
+eOSState cActionMenu::RunChain(const sMenuEntry &entry)
+{
+	eOSState state = osContinue;
+	bool keepOpen = true;
+	for (const sMenuEntry &action : entry.actions) {
+		m_failed = false;
+		state = Run(action);
+		if (m_failed)
+			return osContinue;
+		keepOpen &= action.keepOpen;
+	}
+
+	// the output of the last action is shown in a submenu
+	if (entry.actions.back().action == eEntryAction::Output || keepOpen)
+		return state;
+
+	return osEnd;
+}
+
+/**
  * Show an error, the menu stays open
  *
  * @param text         the error
@@ -540,6 +571,7 @@ eOSState cActionMenu::RunOutput(const sMenuEntry &entry)
  */
 eOSState cActionMenu::Error(const char *text)
 {
+	m_failed = true;
 	Skins.Message(mtError, text);
 
 	return osContinue;
