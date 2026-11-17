@@ -12,6 +12,7 @@
 #ifndef __ACTIONMENU_MENU_H
 #define __ACTIONMENU_MENU_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -33,13 +34,16 @@ public:
 	virtual eOSState ProcessKey(eKeys);
 
 private:
-	std::vector<sMenuEntry> m_entries;                  ///< the entries (copied, the menu outlives the configuration)
-	const sMenuEntry *m_colorEntries[4] = {};           ///< entries of the color buttons (red, green, yellow, blue)
-	std::string m_helpTexts[4];                         ///< texts of the color buttons (SetHelp() keeps the pointers)
-	bool m_hasStates = false;                           ///< true, if an entry shows its state
+	std::vector<sMenuEntry> m_entries;               ///< the entries (copied, the menu outlives the configuration)
+	const sMenuEntry *m_colorEntries[4] = {};        ///< entries of the color buttons (red, green, yellow, blue)
+	std::string m_helpTexts[4];                      ///< texts of the color buttons (SetHelp() keeps the pointers)
+	bool m_hasStates = false;                        ///< true, if an entry shows its state
+	bool m_hasRefresh = false;                       ///< true, if a state is read again periodically
+	uint64_t m_nextHelpRefresh[4] = {};              ///< time to read the states of the color buttons again
 
 	void SetHelpTexts(void);
 	void UpdateStates(void);
+	void RefreshStates(void);
 	const sMenuEntry *Find(eKeys) const;
 	eOSState Run(const sMenuEntry &);
 	eOSState RunSvdrp(const sMenuEntry &);

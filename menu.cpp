@@ -184,9 +184,13 @@ public:
 	}
 	const sMenuEntry &Entry(void) const { return m_entry; }                        ///< the entry of the item
 
+	/** true, if the state of the entry needs to be read again */
+	bool RefreshDue(uint64_t now) const { return m_entry.refreshSeconds && now >= m_nextRefresh; }
+
 	/** read the state of the entry again */
 	void Update(void)
 	{
+		m_nextRefresh = cTimeMs::Now() + m_entry.refreshSeconds * 1000;
 		if (IsHeader())
 			SetText(m_entry.text.c_str());
 		else
@@ -198,7 +202,8 @@ public:
 	bool IsHeader(void) const { return m_entry.action == eEntryAction::Info && m_entry.stateCommand.empty(); }
 
 private:
-	const sMenuEntry &m_entry;  ///< the entry of the item
+	const sMenuEntry &m_entry;        ///< the entry of the item
+	uint64_t m_nextRefresh = 0;       ///< time to read the state again (see sMenuEntry::refreshSeconds)
 };
 
 } // namespace
@@ -220,6 +225,7 @@ cActionMenu::cActionMenu(const char *title, const std::vector<sMenuEntry> &entri
 		else
 			Add(new cActionItem(entry));
 		m_hasStates |= !entry.stateCommand.empty();
+		m_hasRefresh |= entry.refreshSeconds > 0;
 	}
 
 	SetHelpTexts();
@@ -235,9 +241,33 @@ void cActionMenu::SetHelpTexts(void)
 		if (m_colorEntries[i]) {
 			m_helpTexts[i] = EntryText(*m_colorEntries[i]);
 			help[i] = m_helpTexts[i].c_str();
+			m_nextHelpRefresh[i] = cTimeMs::Now() + m_colorEntries[i]->refreshSeconds * 1000;
 		}
 	}
 	SetHelp(help[0], help[1], help[2], help[3]);
+}
+
+/**
+ * Read the states again, which are due to be refreshed
+ */
+void cActionMenu::RefreshStates(void)
+{
+	uint64_t now = cTimeMs::Now();
+
+	for (cOsdItem *item = First(); item; item = Next(item)) {
+		cActionItem *actionItem = static_cast<cActionItem *>(item);
+		if (actionItem->RefreshDue(now)) {
+			actionItem->Update();
+			DisplayItem(item);
+		}
+	}
+
+	for (int i = 0; i < 4; i++) {
+		if (m_colorEntries[i] && m_colorEntries[i]->refreshSeconds && now >= m_nextHelpRefresh[i]) {
+			SetHelpTexts();
+			break;
+		}
+	}
 }
 
 /**
@@ -263,6 +293,10 @@ void cActionMenu::UpdateStates(void)
  */
 eOSState cActionMenu::ProcessKey(eKeys key)
 {
+	// VDR calls it without a key at least once per second
+	if (key == kNone && m_hasRefresh && !HasSubMenu())
+		RefreshStates();
+
 	bool hadSubMenu = HasSubMenu();
 	eOSState state = cOsdMenu::ProcessKey(key);
 	if (hadSubMenu) {

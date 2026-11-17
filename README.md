@@ -44,8 +44,8 @@ error is shown with its line, when the menu is opened.
 
 Every line is an entry or the end of a submenu:
 
-	<key> "<text>"[?] [<state>] <action>
-	<key> "<text>" <state>
+	<key> "<text>"[?] [<state> [<refresh>]] <action>
+	<key> "<text>" <state> [<refresh>]
 	- "<text>"
 	<key> "<text>" [<state>] {
 	    <entries of the submenu>
@@ -83,6 +83,12 @@ state (optional)
 	is closed. The command must only read the state, it is run every time. VDR waits for a
 	shell command, so it must be quick. The command can't contain "]". If the state can't be
 	read (an error or no output), "?" is shown.
+
+	[refresh] or [refresh <seconds>] after the state reads it again periodically, while
+	the menu is shown (default: every 2 seconds, VDR handles the menu at least once per
+	second), e.g. for
+
+		- "Temperature" [shell vcgencmd measure_temp | cut -d= -f2] [refresh]
 
 	An entry with a state doesn't need an action, it only shows the state, e.g.
 

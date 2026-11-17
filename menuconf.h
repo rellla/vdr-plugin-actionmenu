@@ -45,6 +45,7 @@ struct sMenuEntry {
 	eEntryAction stateAction = eEntryAction::Svdrp;    ///< Svdrp or Shell: the command, whose reply or output is shown as state
 	std::string statePlugin;                           ///< plugin of the SVDRP command of the state
 	std::string stateCommand;                          ///< SVDRP or shell command of the state (empty: no state)
+	int refreshSeconds = 0;                            ///< read the state again after this time, while the menu is shown (0: never)
 	std::vector<sMenuEntry> entries;                   ///< entries of a submenu
 };
 

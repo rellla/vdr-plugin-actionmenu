@@ -1,7 +1,7 @@
 # actionmenu.conf - entries of the action menu
 #
-# <key> "<text>"[?] [<state>] <action>
-# <key> "<text>" <state>                       (only shows the state)
+# <key> "<text>"[?] [<state> [<refresh>]] <action>
+# <key> "<text>" <state> [<refresh>]           (only shows the state)
 # - "<text>"                                   (header)
 # <key> "<text>" [<state>] {
 #     <entries of the submenu>
@@ -9,7 +9,8 @@
 #
 # ?:      ask before the action
 # state:  [svdrp <plugin> <command>] or [shell <command>], the reply or the output
-#         is shown as state of the entry
+#         is shown as state of the entry, [refresh [<seconds>]] after it reads it
+#         again periodically
 #
 # key:    0 - 9, Red, Green, Yellow, Blue or - (no key, only in the list)
 # action: svdrp <plugin> <command> [<options>]   SVDRP command of a plugin
@@ -43,5 +44,5 @@ Blue    "Picture in picture" {
 4       "Zoom"              svdrp drmdevice ZOOM next
 5       "Free space"        output df -h /storage 2>&1
 -       "System"
--       "Temperature"       [shell vcgencmd measure_temp | cut -d= -f2]
+-       "Temperature"       [shell vcgencmd measure_temp | cut -d= -f2] [refresh]
 -       "Restart VDR"?      shell systemctl restart vdr

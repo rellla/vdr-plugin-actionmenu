@@ -103,6 +103,40 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 	REQUIRE(e[4].command == "true");
 }
 
+TEST_CASE("actionmenu.conf - refresh", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"- \"Temperature\" [shell vcgencmd measure_temp] [refresh]\n"
+		"- \"Load\" [shell cut -d' ' -f1 /proc/loadavg][REFRESH 10]\n"
+		"1 \"Passthrough\" [svdrp drmdevice PASS] [refresh 5] svdrp! drmdevice PASS toggle\n"
+		"2 \"Zoom\" [svdrp drmdevice ZOOM] svdrp drmdevice ZOOM next\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e[0].refreshSeconds == 2);
+	REQUIRE(e[0].action == eEntryAction::Info);
+	REQUIRE(e[1].refreshSeconds == 10);
+	REQUIRE(e[2].refreshSeconds == 5);
+	REQUIRE(e[2].action == eEntryAction::Svdrp);
+	REQUIRE(e[2].command == "PASS toggle");
+	REQUIRE(e[3].refreshSeconds == 0);
+
+	const std::pair<const char *, const char *> errors[] = {
+		{ "- \"A\" [refresh]\n",                             "line 1: refresh needs a state before it" },
+		{ "1 \"A\" [refresh] key Ok\n",                      "line 1: refresh needs a state before it" },
+		{ "- \"A\" [shell x] [refresh\n",                    "line 1: the closing ']' of refresh is missing" },
+		{ "- \"A\" [shell x] [refresh 0]\n",                 "line 1: refresh needs the seconds (1 - 3600)" },
+		{ "- \"A\" [shell x] [refresh 3601]\n",              "line 1: refresh needs the seconds (1 - 3600)" },
+		{ "- \"A\" [shell x] [refresh 2s]\n",                "line 1: refresh needs the seconds (1 - 3600)" },
+		{ "- \"A\" [shell x] [refresh -1]\n",                "line 1: refresh needs the seconds (1 - 3600)" },
+	};
+	for (const auto &[text, error] : errors) {
+		INFO(text);
+		REQUIRE_FALSE(Parse(config, text));
+		REQUIRE(config.Error() == error);
+	}
+}
+
 TEST_CASE("actionmenu.conf - entries without action", "[menuconf]") {
 	cMenuConfig config;
 

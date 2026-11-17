@@ -13,6 +13,7 @@
  *
  * The optional state in brackets is "[svdrp <plugin> <command>]" or
  * "[shell <command>]", the reply or the output is shown as state of the entry.
+ * "[refresh [<seconds>]]" after it reads the state again periodically.
  * A '?' directly after the text asks before the action. An entry with a state
  * doesn't need an action, it only shows the state then. An entry without key,
  * action and state is a header, which structures the menu.
@@ -35,6 +36,7 @@
  * @license{AGPL-3.0-or-later}
  */
 
+#include <cstdlib>
 #include <fstream>
 
 #include <strings.h>
@@ -44,6 +46,7 @@
 namespace {
 
 const char *const WHITESPACE = " \t\r";
+const int DEFAULT_REFRESH_SECONDS = 2;   ///< interval of "[refresh]" without seconds
 
 /** Remove the whitespace at the beginning and the end */
 std::string Trim(const std::string &s)
@@ -217,6 +220,9 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 
 	entry.confirm = rest.compare(end + 1, 1, "?") == 0;
 	std::string action = Trim(rest.substr(end + (entry.confirm ? 2 : 1)));
+	if (!strncasecmp(action.c_str(), "[refresh", 8))
+		return Fail(line, "refresh needs a state before it");
+
 	if (!action.empty() && action[0] == '[') {
 		size_t close = action.find(']');
 		if (close == std::string::npos)
@@ -233,6 +239,17 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		if (entry.stateCommand.empty())
 			return Fail(line, "the state needs svdrp <plugin> <command> or shell <command>");
 		action = Trim(action.substr(close + 1));
+
+		if (!strncasecmp(action.c_str(), "[refresh", 8)) {
+			close = action.find(']');
+			if (close == std::string::npos)
+				return Fail(line, "the closing ']' of refresh is missing");
+			std::string seconds = Trim(action.substr(8, close - 8));
+			entry.refreshSeconds = seconds.empty() ? DEFAULT_REFRESH_SECONDS : atoi(seconds.c_str());
+			if (entry.refreshSeconds < 1 || entry.refreshSeconds > 3600 || seconds.find_first_not_of("0123456789") != std::string::npos)
+				return Fail(line, "refresh needs the seconds (1 - 3600)");
+			action = Trim(action.substr(close + 1));
+		}
 	}
 
 	if (action == "{") {
