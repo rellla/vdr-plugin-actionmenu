@@ -1,6 +1,15 @@
 VDR Plugin 'actionmenu' Revision History
 ----------------------------------------
 
+2026-11-17: Version 0.2.0
+
+- The SVDRP reply codes 9xx of the plugins mean success: states showed "?",
+  replies were shown as errors and chains stopped after an SVDRP command.
+- The placeholders are quoted in the commands of shell, output and [shell]
+  states, they must not be put in quotes anymore.
+- The command of a state may contain pairs of brackets.
+- The syntax of actionmenu.conf is stable now.
+
 2026-11-17: Version 0.1.0
 
 - Initial revision: a menu with actions for the keys of the remote control,
