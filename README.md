@@ -46,6 +46,7 @@ Every line is an entry or the end of a submenu:
 
 	<key> "<text>"[?] [<state>] <action>
 	<key> "<text>" <state>
+	- "<text>"
 	<key> "<text>" [<state>] {
 	    <entries of the submenu>
 	}
@@ -90,6 +91,15 @@ state (optional)
 
 	It can't be selected in the list. Its key (a number or color key) reads all states
 	again.
+
+An entry without key, action and state is a header, which structures the menu. It starts at the
+left border and can't be selected:
+
+	- "Output"
+	1 "Detach"  svdrp drmdevice DETA
+	2 "Attach"  svdrp drmdevice ATTA
+	- "Picture in picture"
+	3 "On/off"  svdrp drmdevice PITO
 
 action
 	svdrp <plugin> <command> [<options>]

@@ -14,7 +14,8 @@
  * The optional state in brackets is "[svdrp <plugin> <command>]" or
  * "[shell <command>]", the reply or the output is shown as state of the entry.
  * A '?' directly after the text asks before the action. An entry with a state
- * doesn't need an action, it only shows the state then.
+ * doesn't need an action, it only shows the state then. An entry without key,
+ * action and state is a header, which structures the menu.
  * The key is 0 - 9, Red, Green, Yellow, Blue or "-" (no key, only selectable in
  * the list). The action is one of
  *
@@ -240,7 +241,7 @@ bool cMenuConfig::ParseEntry(const std::string &text, int line, sMenuEntry &entr
 		return true;
 	}
 
-	if (action.empty() && !entry.stateCommand.empty()) {
+	if (action.empty() && (!entry.stateCommand.empty() || entry.key.empty())) {
 		entry.action = eEntryAction::Info;
 		if (entry.confirm)
 			return Fail(line, "an entry without action doesn't ask");

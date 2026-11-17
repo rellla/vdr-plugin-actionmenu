@@ -122,6 +122,34 @@ TEST_CASE("actionmenu.conf - entries without action", "[menuconf]") {
 	REQUIRE(e[2].key == "Red");
 }
 
+TEST_CASE("actionmenu.conf - headers", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"- \"Output\"\n"
+		"1 \"Detach\" svdrp drmdevice DETA\n"
+		"-   \"Picture in picture\"  \n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e.size() == 3);
+	REQUIRE(e[0].action == eEntryAction::Info);
+	REQUIRE(e[0].key.empty());
+	REQUIRE(e[0].stateCommand.empty());
+	REQUIRE(e[0].text == "Output");
+	REQUIRE(e[2].action == eEntryAction::Info);
+
+	SECTION("an entry with a key needs an action or a state") {
+		REQUIRE_FALSE(Parse(config, "1 \"A\"\n"));
+		REQUIRE(config.Error() == "line 1: the action is missing");
+		REQUIRE_FALSE(Parse(config, "Red \"A\"\n"));
+	}
+
+	SECTION("a header doesn't ask") {
+		REQUIRE_FALSE(Parse(config, "- \"A\"?\n"));
+		REQUIRE(config.Error() == "line 1: an entry without action doesn't ask");
+	}
+}
+
 TEST_CASE("actionmenu.conf - confirmation", "[menuconf]") {
 	cMenuConfig config;
 

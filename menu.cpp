@@ -156,9 +156,15 @@ public:
 	/** read the state of the entry again */
 	void Update(void)
 	{
-		SetText(cString::sprintf("%s\t%s%s", m_entry.key.c_str(), EntryText(m_entry).c_str(),
-		        m_entry.action == eEntryAction::Menu ? " ..." : ""));
+		if (IsHeader())
+			SetText(m_entry.text.c_str());
+		else
+			SetText(cString::sprintf("%s\t%s%s", m_entry.key.c_str(), EntryText(m_entry).c_str(),
+			        m_entry.action == eEntryAction::Menu ? " ..." : ""));
 	}
+
+	/** true, if the entry is a header, which starts at the left border */
+	bool IsHeader(void) const { return m_entry.action == eEntryAction::Info && m_entry.stateCommand.empty(); }
 
 private:
 	const sMenuEntry &m_entry;  ///< the entry of the item
