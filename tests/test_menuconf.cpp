@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+/**
+ * @file test_menuconf.cpp
+ * Unit tests for cMenuConfig
+ */
+
+#include <sstream>
+#include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "menuconf.h"
+
+namespace {
+
+/** Parse the content of a actionmenu.conf */
+bool Parse(cMenuConfig &config, const std::string &text)
+{
+	std::istringstream in(text);
+	return config.Parse(in);
+}
+
+} // namespace
+
+TEST_CASE("actionmenu.conf - actions", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"# comment\n"
+		"\n"
+		"1   \"PiP on/off\"     svdrp drmdevice PITO\n"
+		"  2 \"Zoom\"           svdrp!  drmdevice  ZOOM next \n"
+		"red \"EPG search\"     plugin epgsearch\n"
+		"-   \"Schedule\"       key Schedule Down\n"
+		"Blue \"Script\"        shell! /usr/bin/script.sh --arg \"x y\"\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e.size() == 5);
+
+	REQUIRE(e[0].key == "1");
+	REQUIRE(e[0].text == "PiP on/off");
+	REQUIRE(e[0].action == eEntryAction::Svdrp);
+	REQUIRE(e[0].plugin == "drmdevice");
+	REQUIRE(e[0].command == "PITO");
+	REQUIRE_FALSE(e[0].keepOpen);
+
+	REQUIRE(e[1].keepOpen);
+	REQUIRE(e[1].plugin == "drmdevice");
+	REQUIRE(e[1].command == "ZOOM next");
+
+	REQUIRE(e[2].key == "Red");
+	REQUIRE(e[2].action == eEntryAction::Plugin);
+	REQUIRE(e[2].plugin == "epgsearch");
+
+	REQUIRE(e[3].key.empty());
+	REQUIRE(e[3].action == eEntryAction::Keys);
+	REQUIRE(e[3].command == "Schedule Down");
+
+	REQUIRE(e[4].key == "Blue");
+	REQUIRE(e[4].action == eEntryAction::Shell);
+	REQUIRE(e[4].keepOpen);
+	REQUIRE(e[4].command == "/usr/bin/script.sh --arg \"x y\"");
+}
+
+TEST_CASE("actionmenu.conf - submenus", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"Red \"Output\" {\n"
+		"    1 \"Detach\" svdrp drmdevice DETA\n"
+		"    2 \"More\" {\n"
+		"        1 \"Attach\" svdrp drmdevice ATTA\n"
+		"    }\n"
+		"    3 \"Status\" svdrp drmdevice STAT\n"
+		"}\n"
+		"1 \"Zoom\" svdrp drmdevice ZOOM next\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e.size() == 2);
+	REQUIRE(e[0].action == eEntryAction::Menu);
+	REQUIRE(e[0].entries.size() == 3);
+	REQUIRE(e[0].entries[1].entries.size() == 1);
+	REQUIRE(e[0].entries[1].entries[0].command == "ATTA");
+	REQUIRE(e[0].entries[2].command == "STAT");
+	REQUIRE(e[1].text == "Zoom");
+
+	SECTION("the same key in another menu") {
+		REQUIRE(Parse(config, "1 \"A\" {\n1 \"B\" key Ok\n}\n"));
+	}
+
+	SECTION("empty submenu") {
+		REQUIRE(Parse(config, "1 \"A\" {\n}\n"));
+		REQUIRE(config.Entries()[0].entries.empty());
+	}
+}
+
+TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
+	cMenuConfig config;
+
+	const std::pair<const char *, const char *> errors[] = {
+		{ "x \"A\" key Ok\n",                   "line 1: unknown key 'x' (0 - 9, Red, Green, Yellow, Blue or -)" },
+		{ "10 \"A\" key Ok\n",                  "line 1: unknown key '10' (0 - 9, Red, Green, Yellow, Blue or -)" },
+		{ "1 A key Ok\n",                       "line 1: the text in quotes is missing" },
+		{ "1\n",                                "line 1: the text in quotes is missing" },
+		{ "1 \"A key Ok\n",                     "line 1: the closing quote of the text is missing" },
+		{ "1 \"\" key Ok\n",                    "line 1: the text is empty" },
+		{ "1 \"A\"\n",                          "line 1: the action is missing" },
+		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell or {)" },
+		{ "1 \"A\" svdrp drmdevice\n",          "line 1: svdrp needs a plugin and a command" },
+		{ "1 \"A\" plugin\n",                   "line 1: plugin needs the name of a plugin" },
+		{ "1 \"A\" plugin a b\n",               "line 1: plugin needs the name of a plugin" },
+		{ "1 \"A\" key\n",                      "line 1: key needs at least one key" },
+		{ "1 \"A\" shell\n",                    "line 1: shell needs a command" },
+		{ "1 \"A\" key! Ok\n",                  "line 1: key! isn't possible, only svdrp! and shell! keep the menu open" },
+		{ "1 \"A\" plugin! epgsearch\n",        "line 1: plugin! isn't possible, only svdrp! and shell! keep the menu open" },
+		{ "\n1 \"A\" key Ok\n1 \"B\" key Ok\n", "line 3: the key 1 is already used in this menu" },
+		{ "Red \"A\" key Ok\nRED \"B\" key Ok\n", "line 2: the key Red is already used in this menu" },
+		{ "1 \"A\" key Ok\n}\n",                "line 2: '}' without a submenu" },
+		{ "1 \"A\" {\n2 \"B\" {\n}\n",          "line 1: the submenu isn't closed with '}'" },
+	};
+
+	for (const auto &[text, error] : errors) {
+		INFO(text);
+		REQUIRE_FALSE(Parse(config, text));
+		REQUIRE(config.Error() == error);
+		REQUIRE(config.Entries().empty());
+	}
+
+	SECTION("entries without a key don't collide") {
+		REQUIRE(Parse(config, "- \"A\" key Ok\n- \"B\" key Ok\n"));
+		REQUIRE(config.Entries().size() == 2);
+	}
+
+	SECTION("a missing file") {
+		REQUIRE_FALSE(config.Load("/nonexistent/actionmenu.conf"));
+		REQUIRE(config.Error() == "can't open /nonexistent/actionmenu.conf");
+	}
+}

@@ -1,0 +1,31 @@
+# actionmenu.conf - entries of the action menu
+#
+# <key> "<text>" <action>
+# <key> "<text>" {
+#     <entries of the submenu>
+# }
+#
+# key:    0 - 9, Red, Green, Yellow, Blue or - (no key, only in the list)
+# action: svdrp <plugin> <command> [<options>]   SVDRP command of a plugin
+#         plugin <plugin>                        open the main menu of a plugin
+#         key <key> [<key> ...]                  send keys to VDR
+#         shell <command>                        run a command in the background
+#         svdrp! and shell! keep the menu open.
+
+Red     "Output"            {
+    1   "Detach"            svdrp drmdevice DETA
+    2   "Attach"            svdrp drmdevice ATTA
+    3   "Passthrough"       svdrp drmdevice PASS toggle
+}
+Green   "Zoom"              svdrp drmdevice ZOOM next
+Blue    "Picture in picture" {
+    1   "On/off"            svdrp drmdevice PITO
+    2   "Channel +"         svdrp! drmdevice PIPU
+    3   "Channel -"         svdrp! drmdevice PIPD
+    4   "Swap channels"     svdrp drmdevice PIPC
+    5   "Swap position"     svdrp! drmdevice PIPP
+}
+1       "Ambient light"     svdrp hyperion AMBI toggle
+2       "EPG search"        plugin epgsearch
+3       "Timers"            key Timers
+-       "Restart VDR"       shell systemctl restart vdr

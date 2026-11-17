@@ -1,0 +1,42 @@
+# VDR plugin language source file.
+# Copyright (C) 2026 Andreas Baierl
+# This file is distributed under the same license as the vdr-actionmenu package.
+# Andreas Baierl <ichgeh@imkreisrum.de>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: vdr-actionmenu 0.0.0\n"
+"Report-Msgid-Bugs-To: <see README>\n"
+"POT-Creation-Date: 2026-11-17 14:00+0100\n"
+"PO-Revision-Date: 2026-11-17 14:00+0100\n"
+"Last-Translator: Andreas Baierl <ichgeh@imkreisrum.de>\n"
+"Language-Team: German <vdr@linuxtv.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Menu with configurable actions for the keys of the remote control"
+msgstr "Menü mit einstellbaren Aktionen für die Tasten der Fernbedienung"
+
+msgid "Action menu"
+msgstr "Aktionsmenü"
+
+msgid "Hide main menu entry"
+msgstr "Verstecke Hauptmenüeintrag"
+
+#, c-format
+msgid "The plugin %s isn't loaded"
+msgstr "Das Plugin %s ist nicht geladen"
+
+#, c-format
+msgid "The plugin %s doesn't know the command %s"
+msgstr "Das Plugin %s kennt den Befehl %s nicht"
+
+#, c-format
+msgid "Unknown key %s"
+msgstr "Unbekannte Taste %s"
+
+#, c-format
+msgid "The plugin %s can't be opened now"
+msgstr "Das Plugin %s kann gerade nicht geöffnet werden"
