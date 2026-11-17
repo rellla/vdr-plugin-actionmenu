@@ -77,7 +77,8 @@ The entries are read from `actionmenu.conf` in the config directory of the plugi
 `--config`. The file is read every time the menu is opened, so changes need no restart of VDR. An
 error is shown with its line, when the menu is opened.
 
-Empty lines and lines starting with `#` are ignored. See
+Empty lines and lines starting with `#` are ignored. A `#` later in a line belongs to the line
+(e.g. to a shell command), there are no comments at the end of a line. See
 [actionmenu.conf.example](actionmenu.conf.example).
 
 ### Entries
