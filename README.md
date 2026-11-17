@@ -216,10 +216,18 @@ are replaced, when the command is run:
 |---------------|---------------|
 | `%channel%`   | number of the current channel |
 | `%channelid%` | ID of the current channel (e.g. `S19.2E-1-1019-10301`) |
-| `%recording%` | directory of the replayed recording (empty without replay), put it in quotes in shell commands |
+| `%recording%` | directory of the replayed recording (empty without replay) |
 
 E.g. `svdrp drmdevice PION %channel%` shows the current channel as pip. Other text with `%` stays
 as it is.
+
+In the commands of `shell`, `output` and `[shell]` states, the values are put in single quotes, so
+the shell doesn't interpret them (e.g. a `$` in the name of a recording). Don't put the
+placeholders in quotes there:
+
+```
+Green "Recording info"  output ls -l %recording%
+```
 
 ## Command line options
 

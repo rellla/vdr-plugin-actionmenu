@@ -45,11 +45,12 @@ int ColorIndex(const std::string &key)
  * Replace the placeholders of a command with the current values
  *
  * @param command      the command
+ * @param shell        quote the values for the shell
  *
  * @return the command with %channel% (number of the current channel), %channelid%
  *         (its ID) and %recording% (directory of the replayed recording)
  */
-std::string Expand(const std::string &command)
+std::string Expand(const std::string &command, bool shell)
 {
 	if (command.find('%') == std::string::npos)
 		return command;
@@ -66,6 +67,11 @@ std::string Expand(const std::string &command)
 
 	if (const char *recording = cReplayControl::NowReplaying())
 		values["recording"] = recording;
+
+	if (shell) {
+		for (auto &value : values)
+			value.second = ShellQuote(value.second);
+	}
 
 	return ExpandPlaceholders(command, values);
 }
@@ -95,7 +101,7 @@ eSvdrpResult Svdrp(const std::string &pluginName, const std::string &commandLine
 	if (!plugin)
 		return eSvdrpResult::NoPlugin;
 
-	std::string line = Expand(commandLine);
+	std::string line = Expand(commandLine, false);
 	std::string option;
 	size_t end = line.find_first_of(" \t");
 	std::string command = line.substr(0, end);
@@ -127,7 +133,7 @@ std::string ShellOutput(const std::string &command)
 {
 	std::string output;
 	cPipe pipe;
-	if (!pipe.Open(Expand(command).c_str(), "r")) {
+	if (!pipe.Open(Expand(command, true).c_str(), "r")) {
 		esyslog("actionmenu: can't run %s", command.c_str());
 		return output;
 	}
@@ -433,7 +439,7 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 		case eEntryAction::Keys:
 			return RunKeys(entry);
 		case eEntryAction::Shell:
-			SystemExec(Expand(entry.command).c_str(), true);
+			SystemExec(Expand(entry.command, true).c_str(), true);
 			if (!entry.keepOpen)
 				return osEnd;
 			UpdateStates();

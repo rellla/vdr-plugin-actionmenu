@@ -39,8 +39,9 @@
  * default). A section ends with the next one or the end of the (sub)menu.
  *
  * "svdrp!" and "shell!" keep the menu open. The commands may contain the
- * placeholders %channel%, %channelid% and %recording% (see ExpandPlaceholders()). Empty lines and lines starting with
- * '#' are ignored.
+ * placeholders %channel%, %channelid% and %recording% (see ExpandPlaceholders()),
+ * in shell commands they are quoted (see ShellQuote()). Empty lines and lines
+ * starting with '#' are ignored.
  *
  * @copyright 2026 by Andreas Baierl. All Rights Reserved.
  *
@@ -432,4 +433,25 @@ std::string ExpandPlaceholders(const std::string &text, const std::map<std::stri
 	}
 
 	return result;
+}
+
+/**
+ * Quote a value for the shell
+ *
+ * @param value        the value of a placeholder
+ *
+ * @return the value in single quotes, so the shell doesn't interpret it (a
+ *         single quote in it becomes '\'')
+ */
+std::string ShellQuote(const std::string &value)
+{
+	std::string result = "'";
+	for (char c : value) {
+		if (c == '\'')
+			result += "'\\''";
+		else
+			result += c;
+	}
+
+	return result + "'";
 }

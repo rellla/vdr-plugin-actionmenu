@@ -399,6 +399,15 @@ TEST_CASE("Placeholders", "[menuconf]") {
 	REQUIRE(ExpandPlaceholders("", values).empty());
 }
 
+TEST_CASE("Shell quoting", "[menuconf]") {
+	REQUIRE(ShellQuote("") == "''");
+	REQUIRE(ShellQuote("12") == "'12'");
+	REQUIRE(ShellQuote("/video/Tatort/2026-11-15.20.15.1-0.rec") == "'/video/Tatort/2026-11-15.20.15.1-0.rec'");
+	REQUIRE(ShellQuote("a b $HOME `id` \"x\" \\") == "'a b $HOME `id` \"x\" \\'");
+	REQUIRE(ShellQuote("it's") == "'it'\\''s'");
+	REQUIRE(ShellQuote("''") == "''\\'''\\'''");
+}
+
 TEST_CASE("actionmenu.conf.example", "[menuconf]") {
 	cMenuConfig config;
 

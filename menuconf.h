@@ -81,5 +81,6 @@ private:
 };
 
 std::string ExpandPlaceholders(const std::string &, const std::map<std::string, std::string> &);
+std::string ShellQuote(const std::string &);
 
 #endif

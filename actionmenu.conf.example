@@ -23,7 +23,7 @@
 #         channel <number | channel ID>          switch to a channel
 #         output <command>                       run a command and show its output
 #         svdrp! and shell! keep the menu open.
-# placeholders in commands: %channel%, %channelid%, %recording%
+# placeholders in commands: %channel%, %channelid%, %recording% (quoted in shell commands)
 # sections:  [live], [replay] and [all] (default) show the following entries only
 #            without replay, during a replay or always
 
@@ -36,7 +36,7 @@ Red     "Output"            {
 Green   "Das Erste"         channel S19.2E-1-1019-10301
 Yellow  "ZDF"               channel S19.2E-1-1079-28006
 [replay]
-Green   "Recording info"    output ls -l "%recording%"
+Green   "Recording info"    output ls -l %recording%
 [all]
 Blue    "Picture in picture" {
     1   "On/off"            svdrp drmdevice PITO
