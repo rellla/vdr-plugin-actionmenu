@@ -9,6 +9,7 @@
  * @license{AGPL-3.0-or-later}
  */
 
+#include <cstdlib>
 #include <map>
 #include <string>
 
@@ -76,7 +77,7 @@ enum class eSvdrpResult {
 	Ok,
 	NoPlugin,         ///< the plugin isn't loaded
 	UnknownCommand,   ///< the plugin doesn't know the command
-	Error,            ///< the plugin replied with an error (code 500 or higher)
+	Error,            ///< the plugin replied with an error (code 4xx or 5xx)
 };
 
 /**
@@ -109,7 +110,10 @@ eSvdrpResult Svdrp(const std::string &pluginName, const std::string &commandLine
 	reply = *text;
 	reply = reply.substr(0, reply.find('\n'));
 
-	return replyCode >= 500 ? eSvdrpResult::Error : eSvdrpResult::Ok;
+	// the default code 900 and the codes 9xx of the plugins mean success, a
+	// negative code continues a reply over several lines
+	int code = abs(replyCode);
+	return code >= 400 && code < 600 ? eSvdrpResult::Error : eSvdrpResult::Ok;
 }
 
 /**
