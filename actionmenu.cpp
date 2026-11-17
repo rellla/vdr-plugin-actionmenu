@@ -26,7 +26,7 @@
 #include "menuconf.h"
 #include "menu.h"
 
-static const char *VERSION        = "0.0.0";
+static const char *VERSION        = "0.1.0";
 static const char *DESCRIPTION    = trNOOP("Menu with configurable actions for the keys of the remote control");
 static const char *MAINMENUENTRY  = trNOOP("Action menu");
 

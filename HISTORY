@@ -1,2 +1,17 @@
 VDR Plugin 'actionmenu' Revision History
 ----------------------------------------
+
+2026-11-17: Version 0.1.0
+
+- Initial revision: a menu with actions for the keys of the remote control,
+  which are configured in actionmenu.conf.
+- The number keys and the color buttons of the skin (favorites) run the
+  entries directly, submenus and headers structure the menu.
+- Actions: SVDRP commands of plugins, main menus of plugins, keys of VDR,
+  shell commands, channels and the output of shell commands, also as chains
+  of several actions.
+- The entries can show a state from an SVDRP or shell command, which can be
+  read again periodically, and ask before their action.
+- Placeholders for the current channel and the replayed recording, sections
+  for the entries without replay and during a replay.
+- Key macros like "@actionmenu Blue 2" run an entry without showing the menu.
