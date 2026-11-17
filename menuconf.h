@@ -27,6 +27,7 @@ enum class eEntryAction {
 	Shell,    ///< run a shell command in the background
 	Channel,  ///< switch to a channel
 	Output,   ///< run a shell command and show its output
+	Info,     ///< no action, the entry only shows its state
 };
 
 /**

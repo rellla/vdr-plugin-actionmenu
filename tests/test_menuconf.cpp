@@ -103,6 +103,25 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 	REQUIRE(e[4].command == "true");
 }
 
+TEST_CASE("actionmenu.conf - entries without action", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"- \"Temperature\" [shell vcgencmd measure_temp | cut -d= -f2]\n"
+		"1 \"Output\" [svdrp drmdevice STAT]  \n"
+		"Red \"Ambient light\" [svdrp hyperion AMBI]\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e.size() == 3);
+	for (const auto &entry : e)
+		REQUIRE(entry.action == eEntryAction::Info);
+	REQUIRE(e[0].stateAction == eEntryAction::Shell);
+	REQUIRE(e[0].stateCommand == "vcgencmd measure_temp | cut -d= -f2");
+	REQUIRE(e[1].key == "1");
+	REQUIRE(e[1].stateCommand == "STAT");
+	REQUIRE(e[2].key == "Red");
+}
+
 TEST_CASE("actionmenu.conf - confirmation", "[menuconf]") {
 	cMenuConfig config;
 
@@ -169,7 +188,7 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A\" [drmdevice PASS] svdrp x y\n",      "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [shell] svdrp x y\n",               "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [] svdrp x y\n",                    "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
-		{ "1 \"A\" [svdrp drmdevice PASS]\n",          "line 1: the action is missing" },
+		{ "1 \"A\"? [svdrp drmdevice PASS]\n",         "line 1: an entry without action doesn't ask" },
 		{ "1 \"A\"? {\n}\n",                     "line 1: a submenu doesn't ask before it is opened" },
 		{ "1 \"A\" ? key Ok\n",                  "line 1: unknown action '?' (svdrp, plugin, key, shell, channel, output or {)" },
 		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel, output or {)" },

@@ -45,6 +45,7 @@ error is shown with its line, when the menu is opened.
 Every line is an entry or the end of a submenu:
 
 	<key> "<text>"[?] [<state>] <action>
+	<key> "<text>" <state>
 	<key> "<text>" [<state>] {
 	    <entries of the submenu>
 	}
@@ -81,6 +82,14 @@ state (optional)
 	is closed. The command must only read the state, it is run every time. VDR waits for a
 	shell command, so it must be quick. The command can't contain "]". If the state can't be
 	read (an error or no output), "?" is shown.
+
+	An entry with a state doesn't need an action, it only shows the state, e.g.
+
+		- "Temperature" [shell vcgencmd measure_temp | cut -d= -f2]
+		- "Output"      [svdrp drmdevice STAT]
+
+	It can't be selected in the list. Its key (a number or color key) reads all states
+	again.
 
 action
 	svdrp <plugin> <command> [<options>]

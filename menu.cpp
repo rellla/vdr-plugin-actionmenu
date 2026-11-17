@@ -145,8 +145,13 @@ std::string EntryText(const sMenuEntry &entry)
  */
 class cActionItem : public cOsdItem {
 public:
-	explicit cActionItem(const sMenuEntry &entry) : m_entry(entry) { Update(); }  ///< create the item of the entry
-	const sMenuEntry &Entry(void) const { return m_entry; }                       ///< the entry of the item
+	/** create the item of the entry, an entry without action can't be selected */
+	explicit cActionItem(const sMenuEntry &entry) : m_entry(entry)
+	{
+		SetSelectable(entry.action != eEntryAction::Info);
+		Update();
+	}
+	const sMenuEntry &Entry(void) const { return m_entry; }                        ///< the entry of the item
 
 	/** read the state of the entry again */
 	void Update(void)
@@ -297,6 +302,10 @@ eOSState cActionMenu::Run(const sMenuEntry &entry)
 			return RunChannel(entry);
 		case eEntryAction::Output:
 			return RunOutput(entry);
+		case eEntryAction::Info:
+			// the key of the entry reads the states again
+			UpdateStates();
+			return osContinue;
 	}
 
 	return osContinue;

@@ -1,6 +1,7 @@
 # actionmenu.conf - entries of the action menu
 #
 # <key> "<text>"[?] [<state>] <action>
+# <key> "<text>" <state>                       (only shows the state)
 # <key> "<text>" [<state>] {
 #     <entries of the submenu>
 # }
@@ -37,4 +38,5 @@ Blue    "Picture in picture" {
 3       "Timers"            key Timers
 4       "Zoom"              svdrp drmdevice ZOOM next
 5       "Free space"        output df -h /storage 2>&1
+-       "Temperature"       [shell vcgencmd measure_temp | cut -d= -f2]
 -       "Restart VDR"?      shell systemctl restart vdr
