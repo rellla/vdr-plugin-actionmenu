@@ -1,10 +1,11 @@
 # actionmenu.conf - entries of the action menu
 #
-# <key> "<text>" [<state>] <action>
+# <key> "<text>"[?] [<state>] <action>
 # <key> "<text>" [<state>] {
 #     <entries of the submenu>
 # }
 #
+# ?:      ask before the action
 # state:  [svdrp <plugin> <command>] or [shell <command>], the reply or the output
 #         is shown as state of the entry
 #
@@ -17,7 +18,7 @@
 #         svdrp! and shell! keep the menu open.
 
 Red     "Output"            {
-    1   "Detach"            svdrp drmdevice DETA
+    1   "Detach"?           svdrp drmdevice DETA
     2   "Attach"            svdrp drmdevice ATTA
     3   "Passthrough"       [svdrp drmdevice PASS] svdrp! drmdevice PASS toggle
 }
@@ -34,4 +35,4 @@ Blue    "Picture in picture" {
 2       "EPG search"        plugin epgsearch
 3       "Timers"            key Timers
 4       "Zoom"              svdrp drmdevice ZOOM next
--       "Restart VDR"       shell systemctl restart vdr
+-       "Restart VDR"?      shell systemctl restart vdr

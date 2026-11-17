@@ -14,6 +14,7 @@
 #include <vdr/channels.h>
 #include <vdr/device.h>
 #include <vdr/i18n.h>
+#include <vdr/interface.h>
 #include <vdr/plugin.h>
 #include <vdr/remote.h>
 #include <vdr/skins.h>
@@ -271,6 +272,9 @@ const sMenuEntry *cActionMenu::Find(eKeys key) const
  */
 eOSState cActionMenu::Run(const sMenuEntry &entry)
 {
+	if (entry.confirm && !Interface->Confirm(cString::sprintf("%s?", entry.text.c_str())))
+		return osContinue;
+
 	dsyslog("actionmenu: %s", entry.text.c_str());
 
 	switch (entry.action) {

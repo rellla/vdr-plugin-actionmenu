@@ -36,6 +36,7 @@ struct sMenuEntry {
 	std::string text;                                  ///< text in the menu
 	eEntryAction action = eEntryAction::Menu;          ///< what the entry does
 	bool keepOpen = false;                             ///< the menu stays open after the action
+	bool confirm = false;                              ///< ask before the action
 	std::string plugin;                                ///< plugin of the SVDRP command or the plugin to open
 	std::string command;                               ///< SVDRP command with its options, the keys, the shell command or the channel
 	eEntryAction stateAction = eEntryAction::Svdrp;    ///< Svdrp or Shell: the command, whose reply or output is shown as state

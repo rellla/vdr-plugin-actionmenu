@@ -44,7 +44,7 @@ error is shown with its line, when the menu is opened.
 
 Every line is an entry or the end of a submenu:
 
-	<key> "<text>" [<state>] <action>
+	<key> "<text>"[?] [<state>] <action>
 	<key> "<text>" [<state>] {
 	    <entries of the submenu>
 	}
@@ -56,6 +56,11 @@ key
 text
 	the text of the entry in the menu or on the color button (keep it short there, the skins
 	cut long texts off)
+
+? (optional)
+	A "?" directly after the text asks before the action ("<text>?" with Ok/Back), e.g.
+
+		- "Restart VDR"? shell systemctl restart vdr
 
 state (optional)
 	A command in brackets, whose reply or output is shown as state of the entry:

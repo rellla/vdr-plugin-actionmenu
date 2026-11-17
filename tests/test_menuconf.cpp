@@ -99,6 +99,24 @@ TEST_CASE("actionmenu.conf - states", "[menuconf]") {
 	REQUIRE(e[4].command == "true");
 }
 
+TEST_CASE("actionmenu.conf - confirmation", "[menuconf]") {
+	cMenuConfig config;
+
+	REQUIRE(Parse(config,
+		"1 \"Restart VDR\"? shell systemctl restart vdr\n"
+		"2 \"Detach\"?[svdrp drmdevice STAT] svdrp drmdevice DETA\n"
+		"3 \"Why?\" key Ok\n"));
+
+	const auto &e = config.Entries();
+	REQUIRE(e[0].confirm);
+	REQUIRE(e[0].command == "systemctl restart vdr");
+	REQUIRE(e[1].confirm);
+	REQUIRE(e[1].stateCommand == "STAT");
+	REQUIRE(e[1].command == "DETA");
+	REQUIRE_FALSE(e[2].confirm);
+	REQUIRE(e[2].text == "Why?");
+}
+
 TEST_CASE("actionmenu.conf - submenus", "[menuconf]") {
 	cMenuConfig config;
 
@@ -148,6 +166,8 @@ TEST_CASE("actionmenu.conf - errors", "[menuconf]") {
 		{ "1 \"A\" [shell] svdrp x y\n",               "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [] svdrp x y\n",                    "line 1: the state needs svdrp <plugin> <command> or shell <command>" },
 		{ "1 \"A\" [svdrp drmdevice PASS]\n",          "line 1: the action is missing" },
+		{ "1 \"A\"? {\n}\n",                     "line 1: a submenu doesn't ask before it is opened" },
+		{ "1 \"A\" ? key Ok\n",                  "line 1: unknown action '?' (svdrp, plugin, key, shell, channel or {)" },
 		{ "1 \"A\" run x\n",                    "line 1: unknown action 'run' (svdrp, plugin, key, shell, channel or {)" },
 		{ "1 \"A\" svdrp drmdevice\n",          "line 1: svdrp needs a plugin and a command" },
 		{ "1 \"A\" plugin\n",                   "line 1: plugin needs the name of a plugin" },
